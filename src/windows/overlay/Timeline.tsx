@@ -439,6 +439,7 @@ const Lane = memo(function Lane({
       <span
         {...(__MIMI_DEVELOPMENT_BUILD__ ? { "data-debug-lane": kind } : {})}
         className={entering ? "block min-w-0 subtitle-lane" : "block min-w-0"}
+        dir="auto"
         hidden={hidden}
         style={{ textAlign: alignment, ...textStyle, display: hidden ? "none" : undefined }}
       >
@@ -523,6 +524,7 @@ function CompactLane({
       <span
         ref={innerRef}
         className={entering ? "subtitle-lane" : undefined}
+        dir="auto"
         aria-hidden="true"
         style={{
           position: "absolute",

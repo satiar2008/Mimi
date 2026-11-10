@@ -577,8 +577,8 @@ export function SessionExport({ visible, onReaderChange }: { visible: boolean; o
                 </div>
                 <div>
                 <div className={`session-transcript__pair${reading !== "bilingual" ? " session-transcript__pair--single" : ""}`}>
-                  {reading !== "translation" && <div><span>{I18N.settings.transcriptSource}</span><p>{entry.source || "—"}</p></div>}
-                  {reading !== "source" && <div><span>{I18N.settings.transcriptTranslation}</span><p>{entry.translation || "—"}</p></div>}
+                  {reading !== "translation" && <div><span>{I18N.settings.transcriptSource}</span><p dir="auto">{entry.source || "—"}</p></div>}
+                  {reading !== "source" && <div><span>{I18N.settings.transcriptTranslation}</span><p dir="auto">{entry.translation || "—"}</p></div>}
                 </div>
                 </div>
               </article>

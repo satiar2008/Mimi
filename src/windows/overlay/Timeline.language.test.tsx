@@ -6,6 +6,37 @@ import { I18N, setStoredUiLanguage } from "../../lib/i18n";
 import { Timeline } from "./Timeline";
 import type { SubtitleBlock } from "./overlayModel";
 
+it("keeps mixed Persian and English text intact in full and compact subtitle lanes", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });
+  const originalScrollTo = HTMLElement.prototype.scrollTo;
+  HTMLElement.prototype.scrollTo = vi.fn();
+  const host = document.createElement("div");
+  document.body.append(host);
+  const root = createRoot(host);
+  const source = "OpenAI (GPT-4o): نسخهٔ ۲.۱";
+  const translation = "به‌روزرسانی OpenAI (GPT-4o) ساعت ۱۲:۳۴ آماده شد.";
+  const blocks: SubtitleBlock[] = [{ id: "live", createdAt: 1, presentation: "live", source, translation }];
+  try {
+    await act(async () => root.render(<Timeline blocks={blocks} fontSize={18} alignment="right"
+      color="white" displayMode="bilingual" audioInput="system" motionEnabled={false} />));
+    const timeline = host.firstElementChild as HTMLElement;
+    for (const [key, hidden] of [["End", "true"], ["Home", null]] as const) {
+      await act(async () => timeline.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true })));
+      const lanes = [...host.querySelectorAll<HTMLElement>('[data-utterance-id="live"] span[dir="auto"]')];
+      expect(lanes.map(lane => lane.textContent)).toEqual([source, translation]);
+      expect(lanes.map(lane => lane.style.unicodeBidi)).toEqual(["plaintext", "plaintext"]);
+      expect(lanes.map(lane => lane.style.textAlign)).toEqual(["right", "right"]);
+      expect(lanes.map(lane => lane.getAttribute("aria-hidden"))).toEqual([hidden, hidden]);
+    }
+  } finally {
+    await act(async () => root.unmount());
+    host.remove();
+    HTMLElement.prototype.scrollTo = originalScrollTo;
+    vi.unstubAllGlobals();
+  }
+});
+
 it("updates paused source labels without replacing subtitle nodes or scrolling", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });

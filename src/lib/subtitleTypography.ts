@@ -51,6 +51,8 @@ export function subtitleTextStyle({
     fontWeight: isReference ? 400 : 500,
     color: hexToRgba(isReference && !tintReference ? "#FFFFFF" : subtitleColorHex(color), isReference && !keepTextOpaque ? 0.86 : 1),
     lineHeight: `${subtitleLineHeight(laneFontSize)}px`,
+    // Each paragraph follows its own text, independently of the UI locale.
+    unicodeBidi: "plaintext" as const,
     overflowWrap: "break-word" as const,
     whiteSpace: preserveLineBreaks ? "pre-line" as const : undefined,
     textShadow: blendsWithBackground ? IMMERSIVE_TEXT_SHADOW : undefined,

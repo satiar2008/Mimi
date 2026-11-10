@@ -294,10 +294,10 @@ export function SettingsView() {
                         style={{ background: settings.subtitleBlendsWithBackground ? "transparent" : subtitleBackgroundColor(settings.subtitleBackgroundOpacity) }}
                       >
                         {settings.subtitleDisplayMode !== "translation" && (
-                          <span style={previewTextStyle("source")}>{I18N.settings.previewOriginal}</span>
+                          <span dir="auto" style={previewTextStyle("source")}>{I18N.settings.previewOriginal}</span>
                         )}
                         {settings.subtitleDisplayMode !== "original" && (
-                          <strong style={previewTextStyle("translation")}>{I18N.settings.previewTranslation}</strong>
+                          <strong dir="auto" style={previewTextStyle("translation")}>{I18N.settings.previewTranslation}</strong>
                         )}
                       </div>
                     </div>
