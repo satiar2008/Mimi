@@ -45,7 +45,7 @@
 }
 .overlay-status-row .overlay-latency { max-width: 100%; }
 .overlay-return-to-live {
-  margin-left: auto;
+  margin-inline-start: auto;
   flex-shrink: 0;
   height: 14px;
   padding: 0 5px;
@@ -75,5 +75,5 @@
   font-size: 10px;
   line-height: 12px;
   color: rgba(255, 255, 255, 0.9);
-  text-align: left;
+  text-align: start;
 }

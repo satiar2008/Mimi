@@ -499,7 +499,7 @@ export function SessionExport({ visible, onReaderChange }: { visible: boolean; o
             {history.length > 0 && <span>{I18N.settings.historySessionCount(history.length)}</span>}
           </div>
           {history.length > 0 && <div className="session-workspace__library-tools">
-            <input type="search" value={historyQuery} aria-label={copy.search} placeholder={copy.search} maxLength={120} onChange={event => setHistoryQuery(event.target.value)} />
+            <input dir="auto" type="search" value={historyQuery} aria-label={copy.search} placeholder={copy.search} maxLength={120} onChange={event => setHistoryQuery(event.target.value)} />
             <SettingsSelect label={copy.filter} value={historyFilter} onChange={setHistoryFilter} options={[{ value: "all", label: copy.all }, { value: "text", label: copy.text }, { value: "audio", label: copy.audio }]} />
           </div>}
           <div className="session-workspace__catalog">
@@ -512,7 +512,7 @@ export function SessionExport({ visible, onReaderChange }: { visible: boolean; o
               <h4>{group.label}</h4>
               {group.items.map((item) => (
                 <button type="button" key={item.id} data-history-id={item.id} aria-pressed={selectedId === item.id} className={`session-history__item${selectedId === item.id ? " is-selected" : ""}`} onClick={() => selectHistory(item.id)}>
-                  <span className="session-workspace__session-name">{item.title || formatSessionTime(item.startedAtMs)}{item.title && <time>{formatSessionTime(item.startedAtMs)}</time>}</span>
+                  <span className="session-workspace__session-name" dir="auto">{item.title || formatSessionTime(item.startedAtMs)}{item.title && <time>{formatSessionTime(item.startedAtMs)}</time>}</span>
                   <small>{item.count > 0 ? I18N.settings.transcriptCount(item.count) : ""}{item.count > 0 && item.hasAudio ? " · " : ""}{item.hasAudio ? I18N.settings.historyAudio : ""}</small>
                 </button>
               ))}
@@ -528,7 +528,7 @@ export function SessionExport({ visible, onReaderChange }: { visible: boolean; o
         {showContent ? <div className="session-transcript">
           <button type="button" className="session-workspace__back" onClick={returnToLibrary}><Icon name="chevron-left" />{copy.back}</button>
           <div className="session-transcript__heading">
-            <div><h3 ref={readerHeading} tabIndex={-1}>{sessionName}</h3>
+            <div><h3 ref={readerHeading} tabIndex={-1} dir="auto">{sessionName}</h3>
               <span className="session-workspace__reader-meta">{selected && <time>{new Intl.DateTimeFormat(language, { dateStyle: "medium", timeStyle: "short" }).format(selected.startedAtMs)}</time>}{availableCount > 0 && <span>{I18N.settings.transcriptCount(availableCount)}</span>}</span>
             </div>
             <div className="session-workspace__reader-actions">
@@ -599,7 +599,7 @@ export function SessionExport({ visible, onReaderChange }: { visible: boolean; o
         {renameOpen && selected && visible && <SettingsConfirmation message={copy.rename} variant="default" confirmIcon="checkmark" confirmLabel={copy.save} disabled={busy || [...nameDraft.trim()].length > 120}
           onCancel={() => setRenameOpen(false)} onConfirm={() => { void renameHistory(selected.id); }}>
           <label className="session-workspace__name-field">{copy.name}<SettingsHelp label={I18N.settings.helpLabel} text={copy.nameHelp} />
-            <input value={nameDraft} maxLength={240} disabled={busy} onChange={event => { setNameDraft(event.target.value); setRenameError(false); }} />
+            <input dir="auto" value={nameDraft} maxLength={240} disabled={busy} onChange={event => { setNameDraft(event.target.value); setRenameError(false); }} />
           </label>
           {[...nameDraft.trim()].length > 120 && <InlineFeedback tone="error">{copy.nameHelp}</InlineFeedback>}
           {renameError && <InlineFeedback tone="error">{copy.renameFailed}</InlineFeedback>}

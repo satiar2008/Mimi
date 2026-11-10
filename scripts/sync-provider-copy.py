@@ -200,6 +200,8 @@ def generated_files() -> dict[Path, str]:
         + "    )\n}\n"
     }
     for locale, directory in locales.items():
+        if directory is None:
+            continue  # Desktop-only interface locale.
         root = RESOURCE_ROOT / directory
         for file in root.glob("*.xml"):
             if file.name == "provider_strings.xml":

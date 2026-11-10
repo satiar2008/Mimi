@@ -111,7 +111,7 @@ export function ConfigInput({ onValueChange, onPasteValue, onGroupBlur, action, 
       if (mounted.current) setBusy(false);
     }
   };
-  return <span className="config-input-group" onBlur={event => { if (!switchingField.current) onGroupBlur?.(event); }}>
+  return <span className="config-input-group" dir="ltr" onBlur={event => { if (!switchingField.current) onGroupBlur?.(event); }}>
     <span className={`config-input${action ? " config-input--with-action" : ""}${canCopy ? " config-input--copyable" : ""}${canExpand ? " config-input--expandable" : ""}${isExpanded ? " config-input--expanded" : ""}`}>
       {isExpanded ? <textarea {...props} ref={assignField} rows={3} wrap="soft" onChange={event => change(event.target.value)} onKeyDown={event => {
         const composing = event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229;

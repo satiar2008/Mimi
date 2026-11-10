@@ -1,6 +1,6 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
-import { effectiveUiLanguage, subscribeUiLanguage } from "./lib/i18n";
+import { applyUiLanguage, effectiveUiLanguage, subscribeUiLanguage } from "./lib/i18n";
 import { appUiTestFrontendReady, isTauri } from "./lib/ipc";
 import { verifyUiTestConnectionReadiness } from "./lib/uiTestConnectionReadiness";
 import { selectSessionStatusKind, useStore } from "./lib/store";
@@ -37,7 +37,7 @@ export default function App() {
   const init = useStore((state) => state.init);
 
   useLayoutEffect(() => {
-    document.documentElement.lang = uiLanguage === "zh" ? "zh-CN" : uiLanguage;
+    applyUiLanguage(uiLanguage);
   }, [uiLanguage]);
 
   useEffect(() => {

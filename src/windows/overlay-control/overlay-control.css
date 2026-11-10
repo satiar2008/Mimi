@@ -43,7 +43,7 @@
   background: var(--control-bg);
   font-size: 12px;
   line-height: 1;
-  text-align: left;
+  text-align: start;
   cursor: pointer;
   transition:
     border-color 130ms ease,
@@ -111,7 +111,7 @@
 
 .overlay-control-island > [data-pulse-style],
 .overlay-control-header > [data-pulse-style] {
-  margin-right: 3px;
+  margin-inline-end: 3px;
 }
 
 .overlay-control-island > svg,
@@ -223,7 +223,7 @@
   color: var(--control-text-faint);
   background: transparent;
   font: inherit;
-  text-align: left;
+  text-align: start;
   cursor: pointer;
 }
 
@@ -345,7 +345,7 @@
   gap: 7px;
   padding: 3px 8px;
   border-radius: 8px;
-  text-align: left;
+  text-align: start;
 }
 
 .overlay-control-setting-row .overlay-control-setting__copy {
@@ -396,7 +396,7 @@
 .overlay-control-switch > span {
   position: absolute;
   top: 2px;
-  left: 2px;
+  inset-inline-start: 2px;
   width: 12px;
   height: 12px;
   border-radius: 50%;
@@ -530,4 +530,8 @@
   --settings-text: var(--control-text);
   --settings-text-muted: var(--control-text-muted);
   --settings-selection-soft: var(--control-surface-hover);
+}
+
+[dir="rtl"] .overlay-control-setting.is-on .overlay-control-switch > span {
+  transform: translateX(-14px);
 }

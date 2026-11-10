@@ -316,6 +316,7 @@ export const Timeline = memo(function Timeline({
           >
             {hasMetadata && <div className="subtitle-metadata" style={{
               display: "flex", alignItems: "center", gap: 7, height: 18, marginBottom: 4,
+              direction: "ltr",
               justifyContent: alignment === "center" ? "center" : alignment === "right" ? "flex-end" : "flex-start",
               color: metadataColor,
               textShadow: blendsWithBackground ? IMMERSIVE_TEXT_SHADOW : undefined,

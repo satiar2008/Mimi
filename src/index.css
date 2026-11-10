@@ -37,6 +37,19 @@
     "Segoe UI", system-ui, sans-serif;
 }
 
+:root:lang(fa) {
+  --mimi-ui-font: "Segoe UI", "Noto Sans Arabic", "Geeza Pro", Tahoma, system-ui, sans-serif;
+}
+
+:root[dir="rtl"] [data-directional-icon] {
+  scale: -1 1;
+}
+
+:root[dir="rtl"] :where(kbd, code, .settings-diagnostic-preview pre) {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
 html,
 body,
 #root {

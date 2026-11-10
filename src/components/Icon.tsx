@@ -142,6 +142,7 @@ export function Icon({ name, className, style }: IconProps) {
       width="1em"
       height="1em"
       aria-hidden="true"
+      data-directional-icon={name === "chevron-left" || name === "chevron-right" ? "" : undefined}
     />
   );
 }

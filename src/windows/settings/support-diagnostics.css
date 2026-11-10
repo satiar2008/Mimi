@@ -141,7 +141,7 @@
 }
 
 .diagnostics-next-step > button {
-  margin-left: auto;
+  margin-inline-start: auto;
 }
 
 .support-diagnostics .settings-diagnostic-toolbar {
@@ -259,7 +259,7 @@
 }
 
 .diagnostics-event-footer > button {
-  margin-left: auto;
+  margin-inline-start: auto;
 }
 
 .support-diagnostics .settings-diagnostic-preview {

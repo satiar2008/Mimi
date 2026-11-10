@@ -25,6 +25,7 @@ describe("localized release notes", () => {
     ["de", "Deutsch", "Startfehler behoben."],
     ["fr", "Français", "Problème de démarrage corrigé."],
     ["ko", "한국어", "시작 오류 수정."],
+    ["fa-IR", "فارسی", "خطای شروع برطرف شد."],
   ] as const)("selects %s notes when present and English otherwise", (language, heading, body) => {
     expect(selectLocalizedReleaseNotes(`${bilingual}\n## ${heading}\n${body}`, language)).toBe(body);
     expect(selectLocalizedReleaseNotes(bilingual, language)).toContain("Fixed");

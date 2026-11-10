@@ -3,6 +3,7 @@ import { SUPPLEMENTAL as zhTW } from "./zh-TW-supplemental";
 import { SUPPLEMENTAL_EN } from "./supplemental-schema";
 import { SUPPLEMENTAL as de } from "./de-supplemental";
 import { SUPPLEMENTAL as fr } from "./fr-supplemental";
+import { SUPPLEMENTAL as faIR } from "./fa-IR-supplemental";
 import { SUPPLEMENTAL as ko } from "./ko-supplemental";
 import { SUPPLEMENTAL as ru } from "./ru-supplemental";
 import { SUPPLEMENTAL as th } from "./th-supplemental";
@@ -17,7 +18,7 @@ function assertComplete(actual: object, expected: object, path: string) {
   }
 }
 
-it.each([["zh-TW", zhTW], ["de", de], ["fr", fr], ["ko", ko], ["th", th], ["ru", ru]] as const)("keeps audio, diagnostics and control-panel copy complete in %s", (locale, copy) => {
+it.each([["zh-TW", zhTW], ["de", de], ["fr", fr], ["ko", ko], ["th", th], ["ru", ru], ["fa-IR", faIR]] as const)("keeps audio, diagnostics and control-panel copy complete in %s", (locale, copy) => {
   assertComplete(copy, SUPPLEMENTAL_EN, locale);
   expect(copy.applicationAudio_copy.title).not.toBe(SUPPLEMENTAL_EN.applicationAudio_copy.title);
   expect(copy.playbackStream_copy.title).not.toBe(SUPPLEMENTAL_EN.playbackStream_copy.title);

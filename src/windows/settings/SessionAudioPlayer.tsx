@@ -241,7 +241,7 @@ export function SessionAudioPlayer({ src, loading, readError, disabled, onLoad, 
         {busy ? <span className="session-audio-player__spinner" aria-hidden="true" /> : <Icon name={playing ? "pause" : "play"} />}
       </button>
       <div className="session-audio-player__timeline">
-        <input type="range" min={0} max={duration ?? 0} step={0.1} value={position}
+        <input dir="ltr" type="range" min={0} max={duration ?? 0} step={0.1} value={position}
           disabled={disabled || duration === null} aria-label={labels.seek} aria-valuetext={time}
           onChange={event => {
             const element = audio.current;

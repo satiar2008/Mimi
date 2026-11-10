@@ -21,7 +21,7 @@
   background: var(--settings-control, var(--control-bg, var(--tray-surface-hover, #202020)));
   font: inherit;
   font-size: 12px;
-  text-align: left;
+  text-align: start;
   cursor: pointer;
 }
 .mimi-select__content {

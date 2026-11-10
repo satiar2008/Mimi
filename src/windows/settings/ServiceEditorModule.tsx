@@ -10,6 +10,7 @@ const copy = {
   de: { models: "Modelle", setup: "Diensteinrichtung", languages: "Sprachvorlage", management: "Konfiguration" },
   fr: { models: "Modèles", setup: "Configuration du service", languages: "Préréglage de langues", management: "Gestion de la configuration" },
   th: { models: "โมเดล", setup: "ตั้งค่าบริการ", languages: "ภาษาที่ตั้งไว้", management: "จัดการการตั้งค่า" },
+  "fa-IR": { models: "مدل‌ها", setup: "راه‌اندازی سرویس", languages: "جفت‌زبان", management: "مدیریت پیکربندی" },
   ru: { models: "Модели", setup: "Настройка сервиса", languages: "Языковая пара", management: "Управление конфигурацией" },
 };
 

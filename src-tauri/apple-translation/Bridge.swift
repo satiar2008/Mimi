@@ -221,6 +221,7 @@ private func preparationInstruction(_ uiLanguage: String) -> String {
     case "ko": "macOS 안내에 따라 번역 언어를 다운로드하거나 활성화하세요."
     case "th": "ทำตามคำแนะนำของ macOS เพื่อดาวน์โหลดหรือเปิดใช้ภาษาสำหรับการแปล"
     case "ru": "Следуйте указаниям macOS, чтобы загрузить или включить языки перевода."
+    case "fa-IR": "برای بارگیری یا فعال‌سازی زبان‌های ترجمه، دستورهای macOS را دنبال کنید."
     default: "Follow the macOS prompt to download or enable translation languages."
     }
 }
@@ -235,6 +236,7 @@ private func preparationCancelLabel(_ uiLanguage: String) -> String {
     case "ko": "취소"
     case "th": "ยกเลิก"
     case "ru": "Отмена"
+    case "fa-IR": "لغو"
     default: "Cancel"
     }
 }
@@ -481,7 +483,7 @@ public func mimiAppleTranslationStatus(_ identifier: UInt64, _ source: UnsafePoi
 }
 
 private func supportsPreparationUiLanguage(_ language: String) -> Bool {
-    ["en", "zh", "zh-TW", "ja", "de", "fr", "ko", "th", "ru"].contains(language)
+    ["en", "zh", "zh-TW", "ja", "de", "fr", "ko", "th", "ru", "fa-IR"].contains(language)
 }
 
 @_cdecl("mimi_apple_translation_prepare")
@@ -656,7 +658,7 @@ func runTranslationReadinessTests() async throws {
 // TranslationSession, showing UI, querying assets, or accessing the network.
 @MainActor
 func runTranslationBridgeInvariantTests() throws {
-    for language in ["en", "zh", "zh-TW", "ja", "de", "fr", "ko", "th", "ru"] {
+    for language in ["en", "zh", "zh-TW", "ja", "de", "fr", "ko", "th", "ru", "fa-IR"] {
         precondition(supportsPreparationUiLanguage(language))
     }
     for language in ["system", "zh-Hant", "zh_tw", "fr-CA", "invalid", ""] {

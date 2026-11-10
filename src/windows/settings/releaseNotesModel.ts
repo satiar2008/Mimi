@@ -41,6 +41,7 @@ function headingLanguage(heading: string): ReleaseNotesLanguage | undefined {
     case "繁體中文": case "繁体中文": case "traditional chinese": case "zh-tw": case "zh-hant": return "zh-TW";
     case "deutsch": case "german": case "de": return "de";
     case "français": case "french": case "fr": return "fr";
+    case "فارسی": case "persian": case "fa": case "fa-ir": return "fa-IR";
     case "한국어": case "korean": case "ko": return "ko";
     case "日本語": case "japanese": case "ja": return "ja";
     default: return undefined;

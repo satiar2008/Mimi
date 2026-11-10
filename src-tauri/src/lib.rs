@@ -534,6 +534,7 @@ enum NativeMenuLanguage {
     Korean,
     Thai,
     Russian,
+    Persian,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -656,7 +657,7 @@ fn effective_native_menu_language(
 ) -> NativeMenuLanguage {
     let language = match override_language {
         Some("zh") | Some("zh-TW") | Some("en") | Some("ja") | Some("de") | Some("fr")
-        | Some("ko") | Some("th") | Some("ru") => override_language,
+        | Some("ko") | Some("th") | Some("ru") | Some("fa-IR") => override_language,
         _ => system_language,
     }
     .unwrap_or("en")
@@ -690,6 +691,8 @@ fn effective_native_menu_language(
         NativeMenuLanguage::Thai
     } else if language.starts_with("ru") {
         NativeMenuLanguage::Russian
+    } else if matches!(language.split('-').next(), Some("fa")) {
+        NativeMenuLanguage::Persian
     } else {
         NativeMenuLanguage::English
     }
@@ -792,6 +795,17 @@ fn native_menu_labels(language: NativeMenuLanguage) -> NativeMenuLabels {
             display_modes: ["Только перевод", "Оригинал и перевод", "Только оригинал"],
             #[cfg(any(target_os = "macos", test))]
             show_in_dock: "Показывать в Dock",
+        },
+        NativeMenuLanguage::Persian => NativeMenuLabels {
+            start_subtitles: "شروع زیرنویس",
+            stop_subtitles: "توقف زیرنویس",
+            toggle_devtools: "باز کردن ابزارهای توسعه",
+            settings: "تنظیمات…",
+            quit: "خروج از Mimi",
+            subtitle_display: "نمایش زیرنویس",
+            display_modes: ["فقط ترجمه", "متن اصلی و ترجمه", "فقط متن اصلی"],
+            #[cfg(any(target_os = "macos", test))]
+            show_in_dock: "نمایش در Dock",
         },
         NativeMenuLanguage::English => NativeMenuLabels {
             start_subtitles: "Start Subtitles",
@@ -1372,6 +1386,7 @@ mod tests {
             ("ko", "ko-KR", NativeMenuLanguage::Korean, "설정…"),
             ("th", "TH_th", NativeMenuLanguage::Thai, "การตั้งค่า…"),
             ("ru", "RU_ru", NativeMenuLanguage::Russian, "Настройки…"),
+            ("fa-IR", "FA_ir", NativeMenuLanguage::Persian, "تنظیمات…"),
         ] {
             assert_eq!(
                 effective_native_menu_language(Some(code), Some("en-US")),
@@ -1385,6 +1400,25 @@ mod tests {
             assert_ne!(
                 native_menu_labels(language).quit,
                 native_menu_labels(NativeMenuLanguage::English).quit
+            );
+        }
+    }
+
+    #[test]
+    fn persian_native_menu_covers_session_actions_and_display_modes() {
+        let labels = native_menu_labels(NativeMenuLanguage::Persian);
+        assert_eq!(labels.start_subtitles, "شروع زیرنویس");
+        assert_eq!(labels.stop_subtitles, "توقف زیرنویس");
+        assert_eq!(labels.settings, "تنظیمات…");
+        assert_eq!(labels.quit, "خروج از Mimi");
+        assert_eq!(
+            labels.display_modes,
+            ["فقط ترجمه", "متن اصلی و ترجمه", "فقط متن اصلی"]
+        );
+        for system in ["fa", "fa-IR", "FA_ir", "fa-AF"] {
+            assert_eq!(
+                effective_native_menu_language(Some("system"), Some(system)),
+                NativeMenuLanguage::Persian
             );
         }
     }

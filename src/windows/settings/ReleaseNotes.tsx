@@ -12,16 +12,17 @@ export function ReleaseNotes({ notes, language = effectiveUiLanguage() }: {
   language?: ReleaseNotesLanguage;
 }) {
   const blocks = parseReleaseNotes(notes, language);
+  const direction = language === "fa-IR" ? "auto" : undefined;
   return (
     <div className="software-update__notes">
       {blocks.length ? blocks.map((block, index) => {
         switch (block.kind) {
-          case "heading": return <h4 key={index}>{inline(block.text)}</h4>;
-          case "paragraph": return <p key={index}>{inline(block.text)}</p>;
-          case "code": return <pre key={index}><code>{block.text}</code></pre>;
+          case "heading": return <h4 key={index} dir={direction}>{inline(block.text)}</h4>;
+          case "paragraph": return <p key={index} dir={direction}>{inline(block.text)}</p>;
+          case "code": return <pre key={index} dir={direction && "ltr"}><code>{block.text}</code></pre>;
           case "list": {
             const List = block.ordered ? "ol" : "ul";
-            return <List key={index}>{block.items.map((item, itemIndex) => <li key={itemIndex}>{inline(item)}</li>)}</List>;
+            return <List key={index} dir={direction}>{block.items.map((item, itemIndex) => <li key={itemIndex}>{inline(item)}</li>)}</List>;
           }
         }
       }) : <p>{I18N.settings.noReleaseNotes}</p>}

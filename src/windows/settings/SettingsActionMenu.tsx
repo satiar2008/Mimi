@@ -23,9 +23,11 @@ export function SettingsActionMenu({ id: triggerId, label, name, disabled, actio
     const rect = trigger.current.getBoundingClientRect();
     const theme = getComputedStyle(trigger.current);
     const width = Math.min(200, window.innerWidth - 16);
+    const rtl = theme.direction === "rtl";
     const height = actions.length * 36 + 10;
     setPopup({ position: "fixed", width,
-      left: Math.max(8, Math.min(rect.right - width, window.innerWidth - width - 8)),
+      left: Math.max(8, Math.min(rtl ? rect.left : rect.right - width, window.innerWidth - width - 8)),
+      direction: rtl ? "rtl" : "ltr",
       ...(window.innerHeight - rect.bottom < height + 8 && rect.top > height
         ? { bottom: window.innerHeight - rect.top + 4 } : { top: Math.max(8, Math.min(rect.bottom + 4, window.innerHeight - height - 8)) }),
       maxHeight: Math.max(36, window.innerHeight - 16),

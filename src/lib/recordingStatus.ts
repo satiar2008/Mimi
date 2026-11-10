@@ -64,6 +64,13 @@ export const recordingStatusCopy: Record<ResolvedUiLanguage, Record<VisibleRecor
     limited: { short: "เสียงเต็ม", label: "การบันทึกเสียงถึงขีดจำกัดพื้นที่แล้ว" },
     error: { short: "อัดเสียงผิดพลาด", label: "เกิดข้อผิดพลาดในการบันทึกเสียง" },
   },
+  "fa-IR": {
+    starting: { short: "آماده‌سازی", label: "در حال آماده‌سازی ضبط صدا" },
+    recording: { short: "ضبط", label: "در حال ضبط صدا" },
+    paused: { short: "توقف ضبط", label: "ضبط صدا موقتاً متوقف است" },
+    limited: { short: "سقف ضبط", label: "ضبط صدا به سقف فضای ذخیره رسید" },
+    error: { short: "خطای ضبط", label: "خطای ضبط صدا" },
+  },
   ru: {
     starting: { short: "Подготовка", label: "Подготовка к записи звука" },
     recording: { short: "Запись", label: "Идёт запись звука" },

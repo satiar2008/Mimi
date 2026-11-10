@@ -41,7 +41,7 @@ export function AutoSaveNameField({ id, label, value, placeholder, draftKey, dis
   return <div className={`settings-field auto-save-name-field ${className}`}>
     <label htmlFor={id}>{label}</label>
     <span className="settings-field__inline">
-      <ConfigInput id={id} value={draft} maxLength={64} disabled={disabled} readOnly={readOnly}
+      <ConfigInput id={id} dir="auto" value={draft} maxLength={64} disabled={disabled} readOnly={readOnly}
         placeholder={placeholder} autoComplete="off"
         aria-invalid={error ? true : undefined} aria-describedby={error ? `${id}-error` : undefined}
         onValueChange={next => current.change(next)}

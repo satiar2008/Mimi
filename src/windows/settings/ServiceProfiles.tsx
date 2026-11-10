@@ -849,7 +849,7 @@ export function ServiceProfiles({
                     <ProviderIcon provider={profile.provider === "deepLX" ? "alibabaCloud" : profile.provider} size={24} />
                     <span className="service-row__copy">
                       <span className="service-row__heading">
-                        <strong key={profile.name} title={profile.name}>{profileTitle(profile)}</strong>
+                        <strong key={profile.name} title={profile.name} dir="auto">{profileTitle(profile)}</strong>
                         <ProfileTranslationRoute profile={profile} />
                         {isActive && selectionChanges && <span className="profile-active-badge">{I18N.settings.activeProfile}</span>}
                         {credentialState !== "present" && <span className="service-row__state"><CredentialBadge state={credentialState} nativeSpeech={profile.provider === "appleSpeech"} /></span>}

@@ -26,7 +26,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  margin-left: auto;
+  margin-inline-start: auto;
   color: var(--settings-text-faint);
 }
 .development-debugger__status::before {
@@ -107,4 +107,8 @@
 .development-debugger__seek { width: 5.5em; min-height: 32px; padding: 4px 8px; color: var(--settings-text); background: var(--settings-control); border: 1px solid var(--settings-border); border-radius: 7px; }
 @media (max-width: 520px) {
   .development-debugger__events summary { grid-template-columns: 36px 60px minmax(0, 1fr) 14px; gap: 6px; }
+}
+
+[dir="rtl"] .development-debugger details[open] summary > [data-directional-icon] {
+  scale: 1;
 }

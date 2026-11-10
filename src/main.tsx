@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
-import { effectiveUiLanguage } from "./lib/i18n";
+import { applyUiLanguage, effectiveUiLanguage } from "./lib/i18n";
 import "./index.css";
 import "./linux.css";
 
@@ -11,8 +11,7 @@ const userAgent = navigator.userAgent;
 if (/\bLinux\b/i.test(userAgent) && !/\b(Android|CrOS)\b/i.test(userAgent)) {
   document.documentElement.dataset.platform = "linux";
 }
-const uiLanguage = effectiveUiLanguage();
-document.documentElement.lang = uiLanguage === "zh" ? "zh-CN" : uiLanguage;
+applyUiLanguage(effectiveUiLanguage());
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>

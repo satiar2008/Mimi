@@ -352,6 +352,7 @@ it.each(UI_LANGUAGES)("renders a runtime recognition failure with a neutral stat
     ko: ["자막 오류", "음성 인식 실패"],
     fr: ["Erreur des sous-titres", "Échec de la reconnaissance vocale"],
     th: ["คำบรรยายเกิดข้อผิดพลาด", "การรู้จำเสียงไม่สำเร็จ"],
+    "fa-IR": ["خطای زیرنویس", "تشخیص گفتار ناموفق بود"],
     ru: ["Ошибка субтитров", "Ошибка распознавания речи"],
   }[language];
   const classification = { category: "recognition", phase: "asr_recognition", code: "APPLE_SPEECH_RECOGNITION_FAILED", description: "private-native-description" };

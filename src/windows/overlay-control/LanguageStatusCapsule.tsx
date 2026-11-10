@@ -109,9 +109,9 @@ export function LanguageStatusCapsule({
         <span className="overlay-control-island__phase">{compact.phase}</span>
       )}
       <span className="overlay-control-island__summary">
-        <strong>{compact.source}</strong>
+        <strong dir="auto">{compact.source}</strong>
         <span aria-hidden="true">{status.separator}</span>
-        <span>{compact.target}</span>
+        <span dir="auto">{compact.target}</span>
       </span>
       <RecordingIndicator status={audioRecording} language={effectiveUiLanguage()} />
       <Icon name={expanded ? "chevron-up" : "chevron-down"} />

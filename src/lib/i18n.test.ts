@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { effectiveUiLanguage, I18N, localizedRecord, UI_LANGUAGES, UI_LANGUAGE_OPTIONS, setStoredUiLanguage, subscribeUiLanguage } from "./i18n";
+import { applyUiLanguage, effectiveUiLanguage, I18N, localizedRecord, UI_LANGUAGES, UI_LANGUAGE_OPTIONS, setStoredUiLanguage, subscribeUiLanguage } from "./i18n";
 import { SUBTITLE_DISPLAY_OPTIONS } from "./subtitleDisplay";
-import { SOURCE_LANGUAGE_DISPLAY_NAMES, TARGET_LANGUAGE_DISPLAY_NAMES } from "./types";
+import { SOURCE_LANGUAGE_DISPLAY_NAMES, TARGET_LANGUAGE_DISPLAY_NAMES, sourceLanguageStatusDisplayName } from "./types";
 
 afterEach(() => { setStoredUiLanguage("en"); vi.unstubAllGlobals(); });
 
@@ -100,9 +100,10 @@ const localizedExamples = {
   ko: { english: "영어" },
   th: { english: "อังกฤษ" },
   ru: { english: "английский" },
+  "fa-IR": { english: "انگلیسی" },
 } as const;
 
-it.each(["zh-TW", "de", "fr", "ko", "th", "ru"] as const)("switches every surface and language labels to %s without reload", language => {
+it.each(["zh-TW", "de", "fr", "ko", "th", "ru", "fa-IR"] as const)("switches every surface and language labels to %s without reload", language => {
   setStoredUiLanguage("en");
   const english = { tray: I18N.tray.settings, settings: I18N.settings.applicationTitle, overlay: I18N.overlay.phaseIdle, modes: I18N.modes.lowLatencyHelp };
   const listener = vi.fn();
@@ -121,7 +122,7 @@ it.each(["zh-TW", "de", "fr", "ko", "th", "ru"] as const)("switches every surfac
 
 it.each([
   ["zh-TW", "zh-TW"], ["zh-HK", "zh-TW"], ["zh-MO", "zh-TW"], ["zh-Hant", "zh-TW"], ["zh_Hant_CN", "zh-TW"], ["zh-Hans-HK", "zh"], ["zh-CN", "zh"], ["zh-SG", "zh"], ["zh", "zh"],
-  ["de-DE", "de"], ["DE_at", "de"], ["fr-CA", "fr"], ["ko-KR", "ko"], ["th-TH", "th"], ["TH_th", "th"], ["ru-RU", "ru"], ["RU_ru", "ru"], ["es-ES", "en"],
+  ["de-DE", "de"], ["DE_at", "de"], ["fr-CA", "fr"], ["ko-KR", "ko"], ["th-TH", "th"], ["TH_th", "th"], ["ru-RU", "ru"], ["RU_ru", "ru"], ["fa-IR", "fa-IR"], ["FA_ir", "fa-IR"], ["fa", "fa-IR"], ["es-ES", "en"],
 ] as const)("resolves system locale %s to %s and honors the override", (system, expected) => {
   vi.stubGlobal("navigator", { language: system });
   setStoredUiLanguage("system");
@@ -131,7 +132,22 @@ it.each([
 });
 
 it("keeps language choices in their own native spelling", () => {
-  expect(UI_LANGUAGE_OPTIONS.map(option => option.label)).toEqual(["简体中文", "繁體中文", "English", "日本語", "Deutsch", "한국어", "Français", "ภาษาไทย", "Русский"]);
+  expect(UI_LANGUAGE_OPTIONS.map(option => option.label)).toEqual(["简体中文", "繁體中文", "English", "日本語", "Deutsch", "한국어", "Français", "ภาษาไทย", "Русский", "فارسی"]);
+});
+
+it("restores the document direction when switching from Persian to English", () => {
+  const documentElement = { lang: "en", dir: "ltr" };
+  vi.stubGlobal("document", { documentElement });
+  applyUiLanguage("fa-IR");
+  expect(documentElement).toEqual({ lang: "fa-IR", dir: "rtl" });
+  applyUiLanguage("en");
+  expect(documentElement).toEqual({ lang: "en", dir: "ltr" });
+});
+
+it("localizes detected language names in Persian", () => {
+  setStoredUiLanguage("fa-IR");
+  expect(sourceLanguageStatusDisplayName("auto", "en", "fa")).toBe("تشخیص خودکار (انگلیسی)");
+  expect(SOURCE_LANGUAGE_DISPLAY_NAMES.fa).toBe("فارسی");
 });
 
 it("keeps all primary locale keys, functions and values complete", () => {

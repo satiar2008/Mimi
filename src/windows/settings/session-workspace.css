@@ -33,7 +33,7 @@
 #session-export .session-history__item.is-selected { box-shadow: inset 2px 0 var(--settings-text-muted); }
 .session-workspace__session-name { min-width: 0; overflow-wrap: anywhere; }
 .session-workspace__session-name time { display: block; margin-top: 3px; color: var(--settings-text-faint); font-size: 11px; }
-#session-export .session-history__item small { flex-shrink: 0; max-width: 45%; text-align: right; font-size: 11px; }
+#session-export .session-history__item small { flex-shrink: 0; max-width: 45%; text-align: end; font-size: 11px; }
 #session-export .session-history__group h4 { font-size: 11px; }
 #session-export .session-transcript__heading { align-items: flex-start; gap: 16px; padding: 8px 0 20px; }
 #session-export .session-transcript__heading > div { min-width: 0; overflow-wrap: anywhere; }
@@ -68,7 +68,7 @@
   place-items: center;
   width: 28px;
   height: 28px;
-  margin-left: auto;
+  margin-inline-start: auto;
   border: 1px solid transparent;
   border-radius: 5px;
   background: transparent;
@@ -80,7 +80,7 @@
 .session-workspace__copy:disabled { opacity: .4; cursor: default; }
 .session-workspace__copy svg { width: 14px; height: 14px; }
 .session-workspace__name-field { display: block; color: var(--settings-text); font-size: 13px; }
-.session-workspace__name-field > .settings-help-control { margin-left: 6px; }
+.session-workspace__name-field > .settings-help-control { margin-inline-start: 6px; }
 .session-workspace__name-field input { display: block; width: 100%; box-sizing: border-box; margin-top: 10px; }
 .session-workspace__export-scope { font-size: 13px; line-height: 1.6; color: var(--settings-text-muted); margin: 0 0 16px; }
 .session-workspace__export-options { display: grid; gap: 14px; }
@@ -96,8 +96,8 @@
 @media (max-width: 600px) {
   .session-workspace__library-tools { flex-wrap: wrap; }
   .session-workspace__library-tools input { flex-basis: 100%; }
-  .session-workspace__library-tools > .settings-select-wrap { margin-left: auto; max-width: 100%; }
+  .session-workspace__library-tools > .settings-select-wrap { margin-inline-start: auto; max-width: 100%; }
   #session-export .session-transcript__heading { flex-wrap: wrap; gap: 12px; }
   #session-export .session-transcript__heading > div:first-child { flex-basis: 100%; }
-  .session-workspace__reader-actions { margin-left: auto; }
+  .session-workspace__reader-actions { margin-inline-start: auto; }
 }

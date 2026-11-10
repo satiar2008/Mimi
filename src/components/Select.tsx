@@ -108,6 +108,8 @@ export function Select({ label, value, options, disabled = false, searchLabel, e
     const theme = getComputedStyle(button);
     const detailed = options.some(option => !!option.description);
     const width = Math.min(Math.max(rect.width, searchable || detailed ? 280 : 200), window.innerWidth - 16);
+    const rtl = theme.direction === "rtl";
+    const alignRight = searchable ? !rtl : rtl;
     const below = window.innerHeight - rect.bottom - 12;
     const above = rect.top - 12;
     // Search results may arrive asynchronously. Reserve enough room for them
@@ -122,7 +124,8 @@ export function Select({ label, value, options, disabled = false, searchLabel, e
       position: "fixed",
       width,
       maxHeight: height,
-      left: Math.max(8, Math.min(searchable ? rect.right - width : rect.left, window.innerWidth - width - 8)),
+      left: Math.max(8, Math.min(alignRight ? rect.right - width : rect.left, window.innerWidth - width - 8)),
+      direction: rtl ? "rtl" : "ltr",
       ...(searchable
         ? upwards
           ? { bottom: Math.max(8, Math.min(window.innerHeight - rect.top + 5, window.innerHeight - height - 8)) }
@@ -285,7 +288,7 @@ export function Select({ label, value, options, disabled = false, searchLabel, e
       onClick={() => choose(index)}>
       <span className="mimi-select__content">
         {option.icon && <span className="mimi-select__icon" aria-hidden="true">{option.icon}</span>}
-        <span className={`mimi-select__option-copy${option.description ? " mimi-select__option-copy--detailed" : ""}`}><span className="mimi-select__label">{option.label}</span>
+        <span className={`mimi-select__option-copy${option.description ? " mimi-select__option-copy--detailed" : ""}`}><span className="mimi-select__label" dir="auto">{option.label}</span>
           {option.description && <span className="mimi-select__description">{option.description}</span>}
         </span>
       </span>{option.value === value && <Icon name="checkmark" />}
@@ -304,7 +307,7 @@ export function Select({ label, value, options, disabled = false, searchLabel, e
             external value changes, while the focused trigger remains stable. */}
         <span key={JSON.stringify([value, selectedLabel])} className="mimi-select__content">
           {selectedIcon && <span className="mimi-select__icon" aria-hidden="true">{selectedIcon}</span>}
-          <span className="mimi-select__label">{selectedLabel}</span>
+          <span className="mimi-select__label" dir="auto">{selectedLabel}</span>
         </span><Icon name="chevron-down" />
       </button>
       {open && createPortal(
