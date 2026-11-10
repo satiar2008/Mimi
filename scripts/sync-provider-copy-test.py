@@ -31,7 +31,8 @@ class SharedProviderCopyTest(unittest.TestCase):
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text(original.read_text(encoding="utf-8"), encoding="utf-8")
         for directory in source["locales"].values():
-            (root / "android/app/src/main/res" / directory).mkdir(parents=True)
+            if directory is not None:
+                (root / "android/app/src/main/res" / directory).mkdir(parents=True)
         return patch.multiple(MODULE, ROOT=root, SOURCE=root / "shared/provider-copy.json",
                               TS_OUTPUT=root / "src/lib/generated/providerCopy.ts",
                               KOTLIN_OUTPUT=root / "android/app/src/main/java/app/yuxino/mimi/android/GeneratedTextTranslationPresets.kt",
@@ -63,6 +64,13 @@ class SharedProviderCopyTest(unittest.TestCase):
                 MODULE.SOURCE.write_text(json.dumps(data), encoding="utf-8")
                 with self.assertRaisesRegex(ValueError, "Missing or extra translations"):
                     MODULE.generated_files()
+
+    def test_desktop_only_locale_is_generated_without_android_resources(self):
+        data = json.loads(MODULE.SOURCE.read_text(encoding="utf-8"))
+        self.assertIsNone(data["locales"]["fa-IR"])
+        outputs = MODULE.generated_files()
+        self.assertIn('"fa-IR": {', outputs[MODULE.TS_OUTPUT])
+        self.assertFalse(any("values-fa" in str(path) for path in outputs))
 
     def test_restoring_an_old_platform_literal_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:

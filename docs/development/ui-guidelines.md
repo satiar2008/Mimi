@@ -112,13 +112,17 @@ These project rules apply to implementation and review.
   existing spacing around separators. A no-overflow result alone is not
   visual acceptance: inspect the screenshot for touching control borders,
   vertical rhythm and heading/section separation before presenting it.
-- Check all nine supported interface languages (Simplified/Traditional Chinese, English, Japanese, Korean,
-  French, German, Thai and Russian) at the default and minimum window widths.
+- Check all ten supported desktop interface languages (Simplified/Traditional Chinese, English, Japanese, Korean,
+  French, German, Thai, Russian and Persian) at the default and minimum window widths.
   Include Windows-only output choices and Linux-only recovery states even when
   developing on macOS. A hidden native capability must have an explicit local
   fixture; a successful macOS screen alone cannot cover that control. Reuse
   `scripts/fixtures/settings-layout.html` and `scripts/verify-settings-layout.js`
   for actual browser geometry, and keep the native-device evidence separate.
+  Persian uses `fa-IR` with RTL document direction. Keep technical configuration
+  values LTR, isolate user-defined names, and preserve the physical subtitle
+  alignment selected by the user. Verify switching back to an LTR locale in
+  all three desktop windows.
   In a fresh checkout, load the Vite root page once before opening fixtures
   that import optimized dependencies from `/node_modules/.vite/deps/`.
   Keep hover, animation and media checks in the foreground, with one browser
@@ -282,7 +286,7 @@ saved integer or preview alone does not establish a live update. Preserve
 subtitle history and the reader's position for ordinary appearance changes.
 An empty live-caption flag is insufficient to show a padded overlay: require a
 nonblank displayed caption or actionable status, while retaining expanded
-controls and the immersive exit during silence. Check all nine interface
+controls and the immersive exit during silence. Check all supported interface
 languages at normal and large font scales; fixed-height labels and a nominal
 two-row toolbar can still clip long translations. Language resources, picker
 and system locale configuration must match the owning desktop language catalog.

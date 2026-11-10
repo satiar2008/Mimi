@@ -393,7 +393,7 @@ const { flushSync } = (await import("react-dom")).default;
 const { useStore } = await import("/src/lib/store.ts");
 const { SOURCE_LANGUAGE_DISPLAY_NAMES } = await import("/src/lib/types.ts");
 const { audioSourceCopy } = await import("/src/lib/windowsAudioSource.ts");
-const { setStoredUiLanguage, I18N } = await import("/src/lib/i18n.ts");
+const { applyUiLanguage, setStoredUiLanguage, I18N } = await import("/src/lib/i18n.ts");
 const { SettingsView } = await import("/src/windows/settings/SettingsView.tsx");
 const { OverlayControlPanel } = await import("/src/windows/overlay-control/OverlayControlPanel.tsx");
 const { overlayControlPanelModel } = await import("/src/windows/overlay-control/overlayControlModel.ts");
@@ -431,7 +431,7 @@ window.applyLayoutCase = async next => {
     : ["receiving", "silent", "noData"].includes(next.state));
   document.body.dataset.window = next.surface === "overlay" ? "overlay-control" : "settings";
   document.documentElement.dataset.platform = next.platform;
-  document.documentElement.lang = next.language === "zh" ? "zh-CN" : next.language;
+  applyUiLanguage(next.language);
   location.hash = next.category ?? (next.editor || next.listProfiles || next.emptyProfiles || next.providerPicker || next.providerConfirmation ? "service-profiles" : "voice-settings");
   localStorage.setItem("mimi.settings-theme", next.theme);
   setStoredUiLanguage(next.language);
