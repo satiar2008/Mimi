@@ -254,11 +254,11 @@ disappearing notification.
 
 ## Cross-page review
 
-Independent input languages must reach both the visible compact capsule labels
-and its accessible/full language status. Checking only aria-label or the language
-resolver misses a compact-label helper that still reads the system route. Cover
-microphone-only and both-input modes in the actual capsule component and inspect
-its rendered text, retaining the incoming-language controls as a distinct route.
+زبان مستقل ورودی باید هم به نام‌های نمایان کنترل کوچک و هم به برچسب
+دسترس‌پذیریِ جهت زبان برسد. بررسی فقط `aria-label` یا تابع حل زبان، تابع
+نام‌گذاری فشرده‌ای را که هنوز از تنظیمات سیستم می‌خواند پیدا نمی‌کند.
+حالت فقط میکروفون و هر دو ورودی را در خود کامپوننت کنترل کوچک آزمون کنید
+و متن نمایان را ببینید؛ کنترل‌های زبان دریافتی مسیر متمایز خود را دارند.
 
 Before calling a UI consistency fix complete:
 

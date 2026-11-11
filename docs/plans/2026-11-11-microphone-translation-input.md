@@ -1,37 +1,52 @@
-# Independent microphone translation and Windows text insertion
+# زبان مستقل میکروفون و درج متن ویندوز
 
-The desktop currently shares recognition/translation languages between system
-audio and the microphone. Add an explicit independent microphone-language
-opt-in; preserve legacy behavior while it is off. Keep portable language
-resolution in mimi-runtime, with desktop-only preference and capture wiring.
+## مسئله و دامنه
 
-The destination defaults to the selected incoming/system speech language.
-Automatic incoming recognition cannot specify a translation destination: require
-an explicit incoming language or a manual microphone destination rather than
-guessing, sending speech in the wrong language, or silently changing provider.
-Validate each lane against its own route/credentials before opening capture.
-Language edits require stopping the session. Both lanes retain independent
-provider connections, final pairs and capture identity.
+در رفتار قبلی، صدای سیستم و میکروفون زبان‌های تشخیص و ترجمهٔ مشترک داشتند.
+گزینهٔ صریح زبان مستقل میکروفون به دسکتاپ اضافه می‌شود؛ حالت خاموش، رفتار
+نصب‌های قبلی را حفظ می‌کند. حل زبان‌ها در `shared/mimi-runtime` می‌ماند و
+تنظیمات، دریافت صوت و اتصال هر ورودی در لایهٔ دسکتاپ به کار می‌روند.
 
-Windows insertion is an explicit per-utterance action in voice settings. The user
-chooses “Insert microphone translation”, then focuses a target within three
-seconds. Take text only from the native, confirmed microphone display pair;
-never accept arbitrary IPC text or previews. Cancel on navigation, session
-change, clear, or replacement of the chosen pair. Reject repeated successful
-insertions of the same pair. UI Automation must confirm a focused, writable,
-non-password external edit control immediately before Unicode SendInput.
-Do not read target text, use the clipboard, activate another application,
-inject Enter/Tab, submit forms, elevate, or retry partial input. Unsupported
-editors fail visibly. This first action is manual, not continuous dictation.
+مقصد پیش‌فرض مسیر مستقل، زبان مشخص گفتار دریافتی است. تشخیص خودکارِ گفتار
+دریافتی مقصد ترجمهٔ مشخصی تعیین نمی‌کند؛ کاربر باید زبان دریافتی یا مقصد
+دستی میکروفون را انتخاب کند. مقصد حدس زده نمی‌شود و سرویس پنهانی تغییر
+نمی‌کند. هر مسیر پیش از دریافت صوت با قابلیت‌ها و اطلاعات اتصال خودش
+اعتبارسنجی می‌شود. تغییر زبان مستقل به توقف نشست نیاز دارد. اتصال، متن نهایی
+و هویت هر ورودی جدا می‌مانند.
 
-Acceptance: English→Persian system subtitles and Persian→English microphone
-subtitles coexist without changing each other; explicit targets work when
-incoming recognition is automatic; unknown automatic incoming destinations
-fail before capture. Preferences survive restart. Windows insertion preserves
-Persian/English Unicode, punctuation and cursor/selection behavior; system
-subtitles, drafts, passwords, read-only targets and repeated actions do not
-produce input. Cancel/stop/clear supersede pending insertion. Preserve previous
-installer and test evidence until the replacement is verified.
+## درج در ویندوز
 
-Android reuses the portable resolver but does not expose these new settings or
-OS input injection yet. No TTS or mouse/OCR capture is included.
+درج، اقدامی صریح برای هر جمله در تنظیمات صداست. پس از زدن «درج متن»، کاربر
+سه ثانیه برای فعال‌کردن مقصد فرصت دارد. متن فقط از جفت نهاییِ تأییدشدهٔ
+میکروفون در لایهٔ بومی انتخاب می‌شود؛ متن دلخواه ارسالی از رابط یا پیش‌نمایش
+برای نوشتن پذیرفته نمی‌شود.
+
+تغییر نشست، پاک‌کردن، تعویض جفت انتخابی و لغو، درخواست معلق را باطل می‌کنند.
+درج موفق همان جفت دوباره اجرا نمی‌شود. پیش از ارسال نویسه‌های Unicode،
+رابط دسترس‌پذیری ویندوز باید کادر خارجیِ فعال، قابل‌نوشتن و غیررمز را تأیید
+کند. محتوای مقصد یا کلیپ‌بورد خوانده نمی‌شود، تمرکز برنامهٔ دیگری تغییر
+نمی‌کند، Enter/Tab ارسال نمی‌شود، دسترسی بالاتر گرفته نمی‌شود و ورودی ناقص
+خودکار تکرار نمی‌شود. ویرایشگرهای پشتیبانی‌نشده خطای قابل فهم می‌گیرند.
+این اقدام، درج دستی است و ورود پیوستهٔ خودکار گفتار نیست.
+
+## معیارهای پذیرش
+
+- صدای سیستم با جهت انگلیسی به فارسی و میکروفون با جهت فارسی به انگلیسی
+  تنظیم شوند و تنظیمات همدیگر را تغییر ندهند؛ هر سرویس باید زبان انتخابی
+  را پشتیبانی کند.
+- مقصد دستی میکروفون با تشخیص خودکارِ ورودی اصلی قابل انتخاب باشد و مقصد
+  نامشخص پیش از دریافت صوت خطا بدهد. تنظیمات پس از بازشدن دوباره حفظ شوند.
+- زیرنویس و کنترل کوچک، جهت واقعی ورودی مربوط را نشان دهند. متن نمایان و
+  برچسب دسترس‌پذیری کنترل کوچک در حالت فقط میکروفون یکسان باشند.
+- درج ویندوز، ترتیب منطقی فارسی و انگلیسی، نشانه‌گذاری، ایموجی و متن موجود
+  مقصد را حفظ کند. پیش‌نمایش، صدای سیستم، کادر رمز، فقط‌خواندنی و درخواست
+  تکراری نباید ورودی ناخواسته تولید کنند. لغو، توقف و پاک‌کردن بر درخواست
+  معلق اولویت داشته باشند.
+- نصب‌کننده و شواهد قبلی تا تأیید جایگزین حفظ شوند. نتیجهٔ آزمون مصنوعی،
+  به معنی موفقیت گفتار زنده با سرویس واقعی اعلام نشود.
+
+## تفاوت پلتفرم و مراحل بعد
+
+کد حل زبان در runtime مشترک است، ولی رابط و مسیر تنظیم تازه هنوز به اندروید
+وصل نشده‌اند. درج متن سیستم‌عامل مخصوص ویندوز است. خواندن ترجمه با صدا،
+ترجمهٔ نوشتهٔ کاربر و ترجمهٔ متن زیر نشانگر در این مرحله قرار ندارند.

@@ -1,73 +1,129 @@
+<div dir="rtl">
+
 <div align="center">
-  <img src="src-tauri/icons/128x128@2x.png" width="96" alt="mimi">
-  <h1>Mimi</h1>
-  <p>给正在播放的视频，加上实时翻译字幕。</p>
-  <p>
-    <a href="https://github.com/yuxino/mimi/releases/latest"><img src="https://img.shields.io/github/v/release/yuxino/mimi?style=flat&amp;logo=github&amp;logoColor=white" alt="最新版本"></a>
-    <a href="https://github.com/yuxino/mimi/releases"><img src="https://img.shields.io/github/downloads/yuxino/mimi/total?style=flat&amp;labelColor=a85f82&amp;color=e889b5" alt="总下载量"></a>
-    <a href="https://github.com/yuxino/mimi/actions/workflows/ci.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/yuxino/mimi/ci.yml?style=flat&amp;logo=githubactions&amp;logoColor=white&amp;branch=main&amp;event=push&amp;label=CI" alt="main 分支 CI 状态"></a>
-    <a href="LICENSE"><img src="https://img.shields.io/github/license/yuxino/mimi?style=flat&amp;logo=opensourceinitiative&amp;logoColor=white" alt="MIT 许可证"></a>
-  </p>
-  <p>
-    <a href="https://github.com/yuxino/mimi/releases/latest"><img src="https://img.shields.io/badge/macOS-13%2B-555?style=flat&amp;logo=apple&amp;logoColor=white" alt="macOS 13+"></a>
-    <a href="https://github.com/yuxino/mimi/releases/latest"><img src="https://img.shields.io/badge/Windows-x64-0078D4?style=flat&amp;logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI%2BPHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0wIDBoMTF2MTFIMHptMTMgMGgxMXYxMUgxM3pNMCAxM2gxMXYxMUgwem0xMyAwaDExdjExSDEzeiIvPjwvc3ZnPg%3D%3D&amp;logoColor=white" alt="Windows x64"></a>
-    <a href="https://github.com/yuxino/mimi/releases/latest"><img src="https://img.shields.io/badge/Linux-x86__64-FCC624?style=flat&amp;logo=linux&amp;logoColor=white" alt="Linux"></a>
-    <a href="android/README.zh-CN.md"><img src="https://img.shields.io/badge/Android-app-3DDC84?style=flat&amp;logo=android&amp;logoColor=white" alt="Android"></a>
-  </p>
-  <p><a href="https://github.com/yuxino/mimi/releases/latest"><strong>下载 Mimi</strong></a> · <a href="https://mimi.yuxino.cn/">官网</a> · <a href="docs/usage.zh-CN.md">使用指南</a></p>
-  <p>
-    <a href="README_EN.md">English</a> · <a href="docs/readme/zh-CN.md"><strong>简体中文</strong></a> · <a href="docs/readme/zh-TW.md">繁體中文</a> · <a href="docs/readme/ja.md">日本語</a> · <a href="docs/readme/th.md">ภาษาไทย</a> · <a href="docs/readme/ko.md">한국어</a> · <a href="docs/readme/fr.md">Français</a> · <a href="docs/readme/de.md">Deutsch</a> · <a href="docs/readme/ru.md">Русский</a>
-  </p>
+  <img src="src-tauri/icons/128x128@2x.png" width="96" alt="نشان میمی">
+  <h1>Mimi فارسی</h1>
+  <p>زیرنویس و ترجمهٔ زندهٔ صدای رایانه و میکروفون، با رابط فارسی و راست‌به‌چپ.</p>
+  <p><a href="https://github.com/satiar2008/Mimi/tree/feat/fa-ir-rtl"><strong>کد نسخهٔ فارسی</strong></a> · <a href="https://github.com/satiar2008/Mimi/blob/feat/fa-ir-rtl/docs/usage.fa-IR.md">راهنمای استفاده</a> · <a href="https://github.com/satiar2008/Mimi/issues">گزارش مشکل</a></p>
+  <p><a href="README.md"><strong>فارسی</strong></a> · <a href="README_EN.md">انگلیسیِ پروژهٔ اصلی</a> · <a href="docs/readme/zh-CN.md">چینی ساده</a> · <a href="docs/readme/zh-TW.md">چینی سنتی</a> · <a href="docs/readme/ja.md">ژاپنی</a> · <a href="docs/readme/th.md">تایلندی</a> · <a href="docs/readme/ko.md">کره‌ای</a> · <a href="docs/readme/fr.md">فرانسوی</a> · <a href="docs/readme/de.md">آلمانی</a> · <a href="docs/readme/ru.md">روسی</a></p>
 </div>
 
-**不用再为字幕软件单独买会员。** Mimi 免费开源，用你自己的服务商 API Key，就能给视频、直播和网课加上实时翻译字幕。
+**Mimi نرم‌افزاری رایگان و متن‌باز و جایگزینی برای برنامه‌های اشتراکی زیرنویس زنده است.** استفاده از رابط و کد آن هزینهٔ اشتراک ندارد؛ هزینهٔ احتمالی سرویس تشخیص گفتار یا ترجمهٔ انتخابی، جداگانه محاسبه می‌شود.
 
-![Mimi 双语字幕示意：原创插画与示例对白](docs/assets/readme-preview.png)
+این مخزن فورک فارسیِ [پروژهٔ اصلی Mimi](https://github.com/yuxino/Mimi) است. کد فارسی‌سازی و قابلیت‌های تازه در شاخهٔ [`feat/fa-ir-rtl`](https://github.com/satiar2008/Mimi/tree/feat/fa-ir-rtl) نگه‌داری می‌شود. شاخهٔ پیش‌فرض `main` صفحهٔ معرفی فارسی را هم نمایش می‌دهد؛ برای اجرای قابلیت‌های معرفی‌شده، کد شاخهٔ فارسی را دریافت کنید.
 
-字幕显示示意，使用示例对白。[看字幕与沉浸模式演示（旧版界面）](docs/demos/README.md)。
+## وضعیت نسخهٔ فارسی
 
-## 常用功能
+- تمرکز و پذیرش فعلی با **دسکتاپ ویندوز ۶۴ بیتی** است.
+- زبان رابط `fa-IR`، راست‌به‌چپ و متن‌های ترکیبی فارسی و انگلیسی در سه پنجرهٔ دسکتاپ و منوی کنار ساعت پیاده‌سازی شده‌اند.
+- زبان‌های مستقل میکروفون و درج ترجمهٔ نهایی در محل تایپ به نسخهٔ ویندوز اضافه شده‌اند.
+- بستهٔ آزمایشی با شمارهٔ پایهٔ `1.6.17` ساخته و بررسی شده است؛ این شماره به معنی انتشار رسمی مستقلی از پروژهٔ اصلی نیست.
+- **هنوز بسته‌ای در [انتشارهای عمومی این فورک](https://github.com/satiar2008/Mimi/releases) بارگذاری نشده است.** تا زمان انتشار، می‌توانید [نسخهٔ فارسی را از کد بسازید](https://github.com/satiar2008/Mimi/blob/feat/fa-ir-rtl/docs/development/fa-IR.md).
+- بستهٔ ساخته‌شده امضای دیجیتال ندارد. [وضعیت آزمون‌ها و محدودیت‌ها](https://github.com/satiar2008/Mimi/blob/feat/fa-ir-rtl/docs/development/windows-verification.fa-IR.md) به‌صورت جداگانه ثبت شده است.
 
-- **边看边译**：看外语视频、直播和网课时显示双语字幕，也可以只看译文或原文。
-- **沉浸观看**：移动字幕、调整字号和颜色；沉浸模式隐藏操作面板，点击穿透后可继续操作下方应用。
-- **选择音源**：桌面端可只听指定应用的声音（macOS / Windows 11），Linux 可选单独的播放流。
-- **留作笔记**：桌面端可手动开启字幕保存或录音，再导出 TXT / Markdown 字幕或 WAV 音频。默认不保存字幕和录音。
+![نمونهٔ رابط فارسی در شاخهٔ فارسی میمی](https://raw.githubusercontent.com/satiar2008/Mimi/refs/heads/feat/fa-ir-rtl/docs/assets/persian-desktop-settings.png)
 
-## 开始使用
+تصویر مربوط به پنجرهٔ واقعی ویندوز در حالت آزمایشیِ بدون دریافت صوت و بدون درخواست شبکه است. انتخاب زبان گفتار به توانایی سرویس فعال وابسته است.
 
-使用云服务需要自己的密钥（API Key），服务商可能收费；采集的音频或识别文字会发给你选择的服务。
+## قابلیت‌ها
 
-Apple 芯片 Mac（macOS 26+）也可使用 [Apple 本地服务](docs/provider-setup.zh-CN.md#apple-speech)，下载所需语言资源后无需 API Key。
+| قابلیت | وضعیت در شاخهٔ فارسی |
+| --- | --- |
+| رابط فارسی و چیدمان راست‌به‌چپ | پیاده‌سازی شده؛ زبان رابط از تنظیمات عمومی انتخاب می‌شود |
+| فارسی و انگلیسی در یک متن | جهت متن، اعداد، نشانی وب و مقدارهای فنی جداگانه مدیریت می‌شوند؛ تراز انتخابی زیرنویس حفظ می‌شود |
+| زیرنویس زندهٔ صدای سیستم | فعال؛ ورودی پیش‌فرض، صدای رایانه است |
+| دریافت از میکروفون یا هر دو ورودی | با انتخاب صریح کاربر؛ پردازش و زیرنویس هر ورودی جداست |
+| مبدأ و مقصد مستقل میکروفون | فعال؛ تغییر آن‌ها نیازمند توقف زیرنویس است |
+| درج ترجمه در محل تایپ ویندوز | دستی، برای یک ترجمهٔ نهایی، با سه ثانیه مهلت انتخاب مقصد |
+| زیرنویس اصلی، ترجمه یا دوزبانه | قابل انتخاب؛ با تنظیم قلم، اندازه، رنگ، تراز و شفافیت |
+| حالت فراگیر و قفل جای زیرنویس | در دسترس از تنظیمات و کنترل شناور |
+| ذخیرهٔ زیرنویس یا ضبط صوت | اختیاری؛ در دسکتاپ به‌صورت پیش‌فرض خاموش است |
+| خواندن ترجمه با صدا، ترجمهٔ متن تایپ‌شده و متن زیر ماوس | در برنامهٔ توسعهٔ بعدی؛ در این نسخه ارائه نشده‌اند |
 
-1. **下载安装**：在[下载页](https://github.com/yuxino/mimi/releases/latest)选择对应系统的安装包。macOS 13+ 按 Apple 芯片或 Intel 选择 DMG，Windows x64 选 EXE，Linux x86_64 选 AppImage 或 DEB；Android 10+ 看[安装说明](android/README.zh-CN.md#start)。
-2. **配置服务**：打开「设置 → 模型与服务」，添加 OpenAI、Gemini、xAI 或其他支持的服务，填写凭据并保存。[配置指南](docs/provider-setup.zh-CN.md#choose)里有密钥获取和填写方法。
-3. **选择声音和语言**：打开「声音与语言」，选择识别语言和翻译语言。默认使用电脑声音；想翻译自己说的话时，再选麦克风，也可以同时开启两路。
-4. **开启字幕**：在「字幕」页打开「实时字幕」，按提示允许所需权限，再播放含有人声的视频、直播或其他内容。
+## شروع سریع
 
-## 有问题？
+۱. [کد شاخهٔ فارسی را دریافت و نسخهٔ ویندوز را بسازید](https://github.com/satiar2008/Mimi/blob/feat/fa-ir-rtl/docs/development/fa-IR.md)، یا پس از انتشار عمومی، بستهٔ همان فورک را نصب کنید. بسته‌های پروژهٔ اصلی لزوماً قابلیت‌های این شاخه را ندارند.
 
-安装、权限、显示和保存方法见[使用指南](docs/usage.zh-CN.md)。没有字幕时先看[识别错误](docs/usage.zh-CN.md#errors)，仍有问题可[提交反馈](https://github.com/yuxino/mimi/issues)。
+۲. در «تنظیمات ← عمومی»، زبان رابط را «فارسی» بگذارید. انتخاب زبان رابط، زبان تشخیص گفتار یا مقصد ترجمه را تغییر نمی‌دهد.
+
+۳. در «مدل‌ها و سرویس‌ها»، سرویس و پیکربندی خود را اضافه کنید. اطلاعات اتصال و کلیدها را در کادرهای مربوط وارد و ذخیره کنید. [راهنمای فارسی تنظیم سرویس‌ها](https://github.com/satiar2008/Mimi/blob/feat/fa-ir-rtl/docs/provider-setup.fa-IR.md) تفاوت تشخیص گفتار و ترجمهٔ متن را توضیح می‌دهد.
+
+۴. در «صدا و زبان‌ها»، ورودی و زبان‌های صدای دریافتی را انتخاب کنید. دریافت میکروفون تنها با انتخاب آن و شروع نشست انجام می‌شود.
+
+۵. در صفحهٔ «زیرنویس»، «زیرنویس زنده» را روشن کنید و محتوای دارای گفتار را پخش کنید. منوی کنار ساعت نیز شروع، توقف، حالت نمایش، تنظیمات و خروج را در اختیار می‌گذارد.
+
+## ترجمهٔ مستقل میکروفون
+
+در «صدا و زبان‌ها»، گزینهٔ **«زبان مستقل برای میکروفون»** را روشن و زبان گفتار و مقصد آن را انتخاب کنید. خاموش‌بودن این گزینه رفتار قبلیِ زبان‌های مشترک را حفظ می‌کند.
+
+| مسیر | نمونهٔ تنظیم |
+| --- | --- |
+| صدای دریافتی | گفتار انگلیسی ← ترجمهٔ فارسی |
+| میکروفون | گفتار فارسی ← ترجمهٔ انگلیسی |
+
+مقصد پیش‌فرضِ مسیر مستقل، **«هم‌زبان با گفتار دریافتی»** است؛ در این مثال، مقصد میکروفون انگلیسی می‌شود. منظور، زبان مشخص‌شدهٔ گفتار دریافتی است. اگر آن را «خودکار» گذاشته‌اید، زبان دریافتی را مشخص کنید یا مقصد میکروفون را دستی انتخاب کنید.
+
+**فارسی‌بودن رابط به معنی پشتیبانی همهٔ سرویس‌ها از گفتار فارسی نیست.** در مسیر فعلی تشخیص گفتار Alibaba، فارسی در فهرست زبان‌ها نیست؛ پشتیبانی مترجم متن از فارسی مسئله‌ای جداست. برای گفتار فارسی میکروفون، سرویس و مدل سازگار انتخاب کنید. [توضیح انتخاب سرویس](https://github.com/satiar2008/Mimi/blob/feat/fa-ir-rtl/docs/provider-setup.fa-IR.md#persian).
+
+## درج ترجمه در محل تایپ
+
+۱. پس از آماده‌شدن ترجمهٔ نهایی میکروفون، در بخش «ترجمهٔ میکروفون» دکمهٔ **«درج متن»** را بزنید.
+
+۲. ظرف **سه ثانیه**، برنامهٔ مقصد و کادر نوشتن موردنظر را فعال کنید. متن در محل کرسر یا انتخاب فعال همان کادر وارد می‌شود.
+
+۳. متن را بررسی کنید. این اقدام یک ترجمهٔ نهایی را درج می‌کند؛ ورود پیوسته و خودکار گفتار در این نسخه ارائه نشده است.
+
+- کادر رمز عبور، کادر فقط‌خواندنی و ویرایشگری که امکان نوشتن آن قابل تأیید نیست، پذیرفته نمی‌شوند.
+- کلیپ‌بورد در این مسیر خوانده یا تغییر داده نمی‌شود؛ کلید ارسال یا جابه‌جایی میان کادرها زده نمی‌شود و خط جدید به فاصله تبدیل می‌شود.
+- متن‌های موقت و ترجمهٔ صدای سیستم برای درج انتخاب نمی‌شوند. درخواست تکراری، همان ترجمهٔ نهایی فعلی را دوباره وارد نمی‌کند.
+- لغو، تغییر نشست یا جمله، پاک‌کردن زیرنویس و بستن تنظیمات، درخواست معلق را باطل می‌کنند.
+
+جزئیات و رفع اشکال در [راهنمای فارسی استفاده](https://github.com/satiar2008/Mimi/blob/feat/fa-ir-rtl/docs/usage.fa-IR.md#typing) آمده است.
+
+## حریم خصوصی و هزینه
+
+صدای ورودی انتخاب‌شده برای تشخیص و متن شناسایی‌شده برای ترجمه، به سرویس‌هایی که خودتان انتخاب کرده‌اید ارسال می‌شود. انتخاب دو ورودی می‌تواند مصرف جداگانهٔ سرویس ایجاد کند. این برنامه همهٔ مسیرها را آفلاین نمی‌کند.
+
+ذخیرهٔ تاریخچه و ضبط صوت در دسکتاپ پیش‌فرض خاموش‌اند و جداگانه فعال می‌شوند. کلیدها در فایل محلی خصوصی و جدا از تنظیمات عمومی نگه‌داری می‌شوند؛ این فایل متن ساده با دسترسی محدود سیستم‌عامل است. کلید، صدای خصوصی یا متن واقعی نشست را در گزارش عمومی مشکل قرار ندهید.
+
+## راهنماها و پشتیبانی
+
+- [راهنمای فارسی استفاده و رفع اشکال](https://github.com/satiar2008/Mimi/blob/feat/fa-ir-rtl/docs/usage.fa-IR.md)
+- [تنظیم سرویس و پشتیبانی از گفتار فارسی](https://github.com/satiar2008/Mimi/blob/feat/fa-ir-rtl/docs/provider-setup.fa-IR.md)
+- [ساخت، اجرای توسعه و مشارکت](https://github.com/satiar2008/Mimi/blob/feat/fa-ir-rtl/docs/development/fa-IR.md)
+- [آزمون‌های انجام‌شده، مشخصات بسته و موارد بررسی‌نشده](https://github.com/satiar2008/Mimi/blob/feat/fa-ir-rtl/docs/development/windows-verification.fa-IR.md)
+- [گزارش مشکل در فورک فارسی](https://github.com/satiar2008/Mimi/issues)؛ نسخه، سیستم‌عامل، سرویس و مراحل بازتولید را بنویسید و کلیدها را حذف کنید.
+
+کد مشترک پروژه از پلتفرم‌های دیگر نیز پشتیبانی می‌کند؛ پذیرش فارسی فعلی برای ویندوز است. بستهٔ فارسیِ آزموده‌شده برای مک، لینوکس یا اندروید در این کار ارائه نشده و تنظیم مستقل میکروفون و درج ویندوز به رابط اندروید اضافه نشده‌اند.
 
 <details>
-<summary>贡献者与社区致谢</summary>
+<summary>انتشارها، دریافت‌ها و پلتفرم‌های پروژهٔ اصلی</summary>
 
-## 贡献者
+نشان‌های زیر مربوط به مخزن اصلی‌اند و وضعیت انتشار یا آزمون فورک فارسی را نشان نمی‌دهند.
 
-想帮 Mimi 改进？从[贡献指南（中英）](.github/CONTRIBUTING.md)开始。
+<p>
+    <a href="https://github.com/yuxino/mimi/releases/latest"><img src="https://img.shields.io/github/v/release/yuxino/mimi?style=flat&amp;logo=github&amp;logoColor=white" alt="جدیدترین انتشار پروژهٔ اصلی"></a>
+    <a href="https://github.com/yuxino/mimi/releases"><img src="https://img.shields.io/github/downloads/yuxino/mimi/total?style=flat&amp;labelColor=a85f82&amp;color=e889b5" alt="تعداد دریافت‌های پروژهٔ اصلی"></a>
+    <a href="https://github.com/yuxino/mimi/actions/workflows/ci.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/yuxino/mimi/ci.yml?style=flat&amp;logo=githubactions&amp;logoColor=white&amp;branch=main&amp;event=push&amp;label=CI" alt="وضعیت آزمون‌های پروژهٔ اصلی"></a>
+    <a href="LICENSE"><img src="https://img.shields.io/github/license/yuxino/mimi?style=flat&amp;logo=opensourceinitiative&amp;logoColor=white" alt="مجوز ام‌آی‌تی"></a>
+    <a href="https://github.com/yuxino/mimi/releases/latest"><img src="https://img.shields.io/badge/macOS-13%2B-555?style=flat&amp;logo=apple&amp;logoColor=white" alt="مک‌اواس ۱۳ و بالاتر در پروژهٔ اصلی"></a>
+    <a href="https://github.com/yuxino/mimi/releases/latest"><img src="https://img.shields.io/badge/Windows-x64-0078D4?style=flat&amp;logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI%2BPHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0wIDBoMTF2MTFIMHptMTMgMGgxMXYxMUgxM3pNMCAxM2gxMXYxMUgwem0xMyAwaDExdjExSDEzeiIvPjwvc3ZnPg%3D%3D&amp;logoColor=white" alt="ویندوز ۶۴ بیتی در پروژهٔ اصلی"></a>
+    <a href="https://github.com/yuxino/mimi/releases/latest"><img src="https://img.shields.io/badge/Linux-x86__64-FCC624?style=flat&amp;logo=linux&amp;logoColor=white" alt="لینوکس در پروژهٔ اصلی"></a>
+    <a href="https://github.com/yuxino/Mimi/tree/main/android"><img src="https://img.shields.io/badge/Android-app-3DDC84?style=flat&amp;logo=android&amp;logoColor=white" alt="اندروید در پروژهٔ اصلی"></a>
+</p>
 
-感谢每一位写代码、提问题、试用和分享的朋友 (๑•̀ㅂ•́)و✧
+[مخزن اصلی](https://github.com/yuxino/Mimi) · [انتشارهای پروژهٔ اصلی](https://github.com/yuxino/Mimi/releases) · [وبگاه پروژهٔ اصلی](https://mimi.yuxino.cn/)
 
-特别感谢 [@yebuwudong](https://github.com/yebuwudong) 贡献 [Android 版](https://github.com/yuxino/mimi/pull/37)，以及 [@LLLin000](https://github.com/LLLin000) 贡献[字幕动效](https://github.com/yuxino/mimi/pull/67)和 [Windows 音源改进](https://github.com/yuxino/mimi/pull/89)。
+</details>
 
-也感谢 [@Chtholly000](https://github.com/Chtholly000) 改进 [Gemini 连续字幕和连接轮换](https://github.com/yuxino/Mimi/pull/176)。
+<details>
+<summary>سازندگان و قدردانی</summary>
 
-感谢 [@EmmetZ](https://github.com/EmmetZ) 修复 [Wayland 浮窗与控制组件不同步的问题](https://github.com/yuxino/Mimi/pull/242)，并新增 [Linux 单独播放流采集](https://github.com/yuxino/Mimi/pull/275)和[播放流应用图标](https://github.com/yuxino/Mimi/pull/304)。
+Mimi اثر متن‌باز [yuxino](https://github.com/yuxino) و مشارکت‌کنندگان پروژهٔ اصلی است. این فورک، رابط فارسی و اصلاحات مرتبط را روی همان کد توسعه می‌دهد.
 
-感谢 [@wangmian0](https://github.com/wangmian0) 为 [DeepSeek 实时字幕翻译关闭思考模式](https://github.com/yuxino/Mimi/pull/270)。
+از [yebuwudong](https://github.com/yebuwudong) برای [نسخهٔ اندروید](https://github.com/yuxino/mimi/pull/37)، از [LLLin000](https://github.com/LLLin000) برای [پویانمایی زیرنویس](https://github.com/yuxino/mimi/pull/67) و [بهبود صدای ویندوز](https://github.com/yuxino/mimi/pull/89)، و از [Chtholly000](https://github.com/Chtholly000) برای [بهبود گفتار پیوستهٔ جمینای](https://github.com/yuxino/Mimi/pull/176) قدردانی می‌شود.
 
-感谢 [@hubumulity](https://github.com/hubumulity) 贡献[字幕显示条数设置](https://github.com/yuxino/Mimi/pull/303)。
-
-感谢 [@ryannyui](https://github.com/ryannyui) 贡献 [Linux AppImage 图形兼容性修复和工具链升级](https://github.com/yuxino/Mimi/pull/312)。
+همچنین از [EmmetZ](https://github.com/EmmetZ) برای [اصلاح کنترل‌های ویلند](https://github.com/yuxino/Mimi/pull/242)، [دریافت جریان پخش لینوکس](https://github.com/yuxino/Mimi/pull/275) و [نشان برنامه‌ها](https://github.com/yuxino/Mimi/pull/304)، از [wangmian0](https://github.com/wangmian0) برای [بهبود ترجمهٔ دیپ‌سیک](https://github.com/yuxino/Mimi/pull/270)، از [hubumulity](https://github.com/hubumulity) برای [تعداد زیرنویس‌های نمایان](https://github.com/yuxino/Mimi/pull/303)، و از [ryannyui](https://github.com/ryannyui) برای [سازگاری گرافیکی بستهٔ لینوکس](https://github.com/yuxino/Mimi/pull/312) سپاسگزاریم.
 
 <p>
   <a href="https://github.com/yuxino"><img src="docs/assets/contributors/yuxino.svg" width="40" height="40" alt="@yuxino"></a>
@@ -81,12 +137,12 @@ Apple 芯片 Mac（macOS 26+）也可使用 [Apple 本地服务](docs/provider-s
   <a href="https://github.com/ryannyui"><img src="docs/assets/contributors/ryannyui.svg" width="40" height="40" alt="@ryannyui"></a>
 </p>
 
-[查看所有贡献者](https://github.com/yuxino/mimi/graphs/contributors)
+[فهرست کامل مشارکت‌کنندگان پروژهٔ اصلی](https://github.com/yuxino/Mimi/graphs/contributors)
 
-## 社区致谢
-
-也感谢 [V2EX](https://www.v2ex.com/)、[LINUX DO](https://linux.do/)、[小众软件](https://meta.appinn.net/)、[NodeLoc](https://www.nodeloc.com/)、[Solo](https://solo.xin/)、[新趣集](https://xinquji.com/posts/859305)和[电鸭](https://eleduck.com/)社区朋友的试用、反馈与分享。
+از همهٔ کاربران و جامعه‌های وی‌۲ایکس، لینوکس‌دو، اپ‌این، نودلاک، سولو، شین‌چو و الیداک برای آزمون، بازخورد و معرفی پروژه قدردانی می‌شود.
 
 </details>
 
-[MIT](LICENSE) © 2026 yuxino
+[مجوز ام‌آی‌تی](LICENSE) — حقوق پروژهٔ اصلی متعلق به yuxino و مشارکت‌کنندگان آن است.
+
+</div>

@@ -35,14 +35,15 @@ Preserve these product constraints:
   repository. Never add a website copy, subtree, or generated site assets to
   this application repository.
 - `shared/provider-copy.json`: shared service descriptions, setup prerequisites and Alibaba mode copy in all nine UI languages. Run `python3 -B scripts/sync-provider-copy.py` after editing; desktop TypeScript and Android resources are generated. Keep platform-specific permissions/navigation in their native resources. See `docs/development/shared-provider-copy.md`.
-- `README.md`: the Simplified Chinese entry point; `README_EN.md` is English.
-  Other localized READMEs live in `docs/readme/`; contribution and security
-  guides live in `.github/`.
-  Preserve the release, download-count, CI, license and platform badges when
-  simplifying READMEs. Keep language switching in one navigation row; the
-  Chinese entry does not need a second English pitch or quick-start banner.
-  Lead with Mimi as a free, open-source alternative to paid live subtitle
-  software; distinguish that value from any separate provider API charges.
+- `README.md` ورودی فارسی این فورک است. راهنماهای عمومی تازه در
+  `docs/usage.fa-IR.md`، `docs/provider-setup.fa-IR.md` و
+  `docs/development/fa-IR.md` فارسی نگه داشته شوند. معرفی شاخهٔ پیش‌فرض
+  به کد و راهنماهای شاخهٔ `feat/fa-ir-rtl` پیوند دارد؛ به‌روزرسانی معرفی
+  به معنی ادغام کد قابلیت‌ها در `main` نیست. `README_EN.md` و راهنماهای
+  `docs/readme/` نسخه‌های زبان‌های دیگر پروژهٔ اصلی را حفظ می‌کنند.
+  نشان‌های انتشار، دریافت، آزمون، مجوز و پلتفرم حفظ و مالکیتشان روشن شود؛
+  نشان پروژهٔ اصلی به‌عنوان نتیجهٔ آزمون فورک معرفی نشود. انتخاب زبان‌ها
+  در یک ردیف بماند. رایگان‌بودن نرم‌افزار از هزینهٔ احتمالی سرویس جداست.
 - `docs/plans/`: current accepted design records; completed checklists and
   superseded designs stay in Git history. Put reusable rules in the owning
   development guide instead of duplicating task notes. Dated QA, release and
