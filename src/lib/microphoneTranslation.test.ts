@@ -3,7 +3,7 @@ import { setStoredUiLanguage } from "./i18n";
 import { useStore } from "./store";
 import { mergeSettingsSnapshot } from "./settingsState";
 import { hasConfirmedMicrophoneTranslation, incomingMicrophoneLanguageUnknown, microphoneTranslationError, languageSettingsForAudioSource } from "./microphoneTranslation";
-import { visibleLiveSubtitle } from "../windows/overlay/overlayModel";
+import { languageStatus, visibleLiveSubtitle } from "../windows/overlay/overlayModel";
 
 const initial = useStore.getState();
 afterEach(() => { useStore.setState(initial, true); setStoredUiLanguage("system"); });
@@ -54,4 +54,14 @@ it("renders the microphone translation when its source is the system translation
   expect(visibleLiveSubtitle(subtitles, mic, "fa", false, false)?.text).toBe("Hello");
   const reverseOriginal = languageSettingsForAudioSource({ ...settings, targetLanguage: "original" as const }, "microphone");
   expect(reverseOriginal.targetLanguage).toBe("en");
+});
+
+it("shows the actual microphone-only language direction while retaining incoming direction for both", () => {
+  setStoredUiLanguage("en");
+  const settings = { ...initial.settings, sourceLanguage: "en" as const, targetLanguage: "fa" as const,
+    microphoneTranslation: { enabled: true, sourceLanguage: "fa" as const, targetLanguage: null } };
+  const mic = languageStatus({ ...settings, audioInput: "microphone" }, "fa");
+  expect(mic).toMatchObject({ source: "Persian", target: "English" });
+  const both = languageStatus({ ...settings, audioInput: "both" }, null);
+  expect(both).toMatchObject({ source: "English", target: "Persian" });
 });

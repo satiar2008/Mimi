@@ -1,4 +1,5 @@
 import { profileSelectionState } from "../../lib/profileSelection";
+import { microphoneTranslationCopy } from "../../lib/microphoneTranslation";
 import { SettingsToastRegion } from "../settings/SettingsToast";
 import { activeServiceProfile } from "../../lib/providerCapabilities";
 import { speechLanguageGuidance, targetLanguageOptionLabel } from "../../lib/speechLanguageGuidance";
@@ -118,6 +119,9 @@ export function OverlayControlPanel({
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [operationError, setOperationError] = useState<string | null>(null);
   const canChangeSessionSettings = !isChangingSession && pendingAction === null;
+  const microphoneCopy = microphoneTranslationCopy();
+  const incomingSourceLabel = settings.microphoneTranslation?.enabled ? microphoneCopy.incomingSource : I18N.overlay.sourceLanguage;
+  const incomingTargetLabel = settings.microphoneTranslation?.enabled ? microphoneCopy.incomingTarget : I18N.settings.translateTo;
 
   useEffect(() => {
     mounted.current = true;
@@ -292,9 +296,9 @@ export function OverlayControlPanel({
         </div>
 
         <div ref={sourceControlRef} className="overlay-control-picker">
-          <span>{I18N.overlay.sourceLanguage} <SettingsHelp text={speechLanguageGuidance(settings).help} label={I18N.settings.helpLabel} /></span>
+          <span>{incomingSourceLabel} <SettingsHelp text={speechLanguageGuidance(settings).help} label={I18N.settings.helpLabel} /></span>
           <LanguageSelect
-            label={I18N.overlay.sourceLanguage}
+            label={incomingSourceLabel}
             value={settings.sourceLanguage}
             valueLabel={speechLanguageGuidance(settings).optionLabel(settings.sourceLanguage)}
             options={model.sourceOptions.map((language) => ({
@@ -307,9 +311,9 @@ export function OverlayControlPanel({
         </div>
 
         <div ref={targetControlRef} className="overlay-control-picker">
-          <span>{I18N.settings.translateTo} <SettingsHelp text={I18N.settings.translationConfiguredHelp} label={I18N.settings.helpLabel} /></span>
+          <span>{incomingTargetLabel} <SettingsHelp text={I18N.settings.translationConfiguredHelp} label={I18N.settings.helpLabel} /></span>
           <LanguageSelect
-            label={I18N.settings.translateTo}
+            label={incomingTargetLabel}
             value={settings.targetLanguage}
             valueLabel={targetLanguageOptionLabel(settings, settings.targetLanguage)}
             options={model.targetOptions.map(language => ({ value: language, label: targetLanguageOptionLabel(settings, language) }))}
@@ -318,6 +322,12 @@ export function OverlayControlPanel({
           />
         </div>
 
+        {settings.microphoneTranslation?.enabled && <div className="speech-resources-actions">
+          <button type="button" className="speech-resources-link" disabled={pendingAction !== null}
+            onClick={() => performAction("settings", () => onShowSettings("voice"))}>
+            <Icon name="gear" />{microphoneCopy.title}
+          </button>
+        </div>}
         {activeServiceProfile(settings)?.provider === "appleSpeech" && <div className="speech-resources-actions">
           <button type="button" className="speech-resources-link" disabled={pendingAction !== null}
             onClick={() => performAction("settings", () => onShowSettings("appleSpeechResources"))}>

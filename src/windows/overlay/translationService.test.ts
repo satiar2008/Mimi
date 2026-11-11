@@ -10,6 +10,16 @@ const profile: ServiceProfile = {
   credentialState: "present",
 };
 
+it("keeps microphone translation visible when incoming audio is recognition-only", () => {
+  const configured = { ...settings({ provider: "customOpenAIASR", textTranslation: "deepLX" }),
+    targetLanguage: "original" as const,
+    microphoneTranslation: { enabled: true, sourceLanguage: "fa" as const, targetLanguage: "en" as const } };
+  expect(translationService({ ...configured, audioInput: "system" })?.stages).toHaveLength(1);
+  for (const audioInput of ["microphone", "both"] as const) {
+    expect(translationService({ ...configured, audioInput })?.stages.map(stage => stage.role)).toEqual(["recognition", "translation"]);
+  }
+});
+
 function settings(overrides: Partial<ServiceProfile> = {}) {
   return {
     profiles: [{ ...profile, ...overrides }],

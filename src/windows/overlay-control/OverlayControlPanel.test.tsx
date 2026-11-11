@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { act } from "react";
+import { microphoneTranslationCopy } from "../../lib/microphoneTranslation";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import languageCatalogs from "../../../shared/provider-language-catalogs.json";
@@ -58,6 +59,20 @@ function configure(draft: Partial<SettingsSnapshot>) {
   props.settings = { ...props.settings, ...draft };
   props.model = overlayControlPanelModel(props.settings);
 }
+
+it("distinguishes incoming languages from the microphone and opens its own voice settings", async () => {
+  setStoredUiLanguage("fa-IR");
+  configure({ audioInput: "microphone", sourceLanguage: "en", targetLanguage: "fa",
+    microphoneTranslation: { enabled: true, sourceLanguage: "fa", targetLanguage: null } });
+  await mount();
+  const text = microphoneTranslationCopy();
+  expect(picker(text.incomingSource).textContent).toContain(SOURCE_LANGUAGE_DISPLAY_NAMES.en);
+  expect(picker(text.incomingTarget).textContent).toContain(TARGET_LANGUAGE_DISPLAY_NAMES.fa);
+  const button = [...host.querySelectorAll<HTMLButtonElement>('button')].find(b => b.textContent === text.title)!;
+  await act(async () => button.click());
+  expect(props.onShowSettings).toHaveBeenCalledExactlyOnceWith("voice");
+  expect(props.onSwitchSourceLanguage).not.toHaveBeenCalled();
+});
 async function searchSource(query: string) {
   await act(async () => picker(I18N.overlay.sourceLanguage).click());
   const search = document.querySelector<HTMLInputElement>("input.mimi-select__search")!;

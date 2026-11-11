@@ -6,6 +6,7 @@ export const DEFAULT_MICROPHONE_TRANSLATION: MicrophoneTranslation = {
 };
 
 const en = {
+  incomingTitle: "Incoming audio languages", incomingSource: "Incoming speech language", incomingTarget: "Incoming audio translation language",
   title: "Microphone translation", independent: "Separate microphone languages",
   help: "Translate your microphone independently from incoming audio. Stop subtitles before changing these languages.",
   source: "Microphone speech language", target: "Microphone translation language", incoming: "Same as incoming speech",
@@ -21,6 +22,7 @@ const en = {
   saveFailed: "Could not save microphone languages.",
 };
 const fa: typeof en = {
+  incomingTitle: "زبان‌های صدای دریافتی", incomingSource: "زبان گفتار دریافتی", incomingTarget: "زبان ترجمهٔ صدای دریافتی",
   title: "ترجمهٔ میکروفون", independent: "زبان مستقل برای میکروفون",
   help: "گفتار میکروفون را مستقل از صدای دریافتی ترجمه کنید. برای تغییر زبان‌ها، ابتدا زیرنویس را متوقف کنید.",
   source: "زبان گفتار میکروفون", target: "زبان ترجمهٔ میکروفون", incoming: "هم‌زبان با گفتار دریافتی",

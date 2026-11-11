@@ -1,4 +1,5 @@
 import { useLanguageNormalizationToast } from "./useLanguageNormalizationToast";
+import { microphoneTranslationCopy } from "../../lib/microphoneTranslation";
 import { useEffect, useRef, useState } from "react";
 import { LanguageSelect } from "../../components/LanguageSelect";
 import { speechLanguageGuidance, targetLanguageOptionLabel } from "../../lib/speechLanguageGuidance";
@@ -77,7 +78,7 @@ export function ProfileLanguageSettings({ settings, disabled, onOpenAppleResourc
   </>;
   if (embedded) return <div className="apple-translation-language-controls" aria-busy={busy}>{controls}</div>;
   return <section id="translation-languages" className="profile-language-settings" aria-labelledby="translation-languages-title" aria-busy={busy}>
-    <header className="profile-language-settings__heading"><h3 id="translation-languages-title">{I18N.settings.currentLanguagesTitle}</h3><SettingsHelp text={guidance.catalogHelp} label={I18N.settings.helpLabel} /></header>
+    <header className="profile-language-settings__heading"><h3 id="translation-languages-title">{settings.microphoneTranslation?.enabled ? microphoneTranslationCopy().incomingTitle : I18N.settings.currentLanguagesTitle}</h3><SettingsHelp text={guidance.catalogHelp} label={I18N.settings.helpLabel} /></header>
     {controls}
   </section>;
 }

@@ -565,9 +565,11 @@ export interface LanguageStatus {
 }
 
 export function languageStatus(
-  settings: SettingsSnapshot,
+  selectedSettings: SettingsSnapshot,
   detectedLanguage: string | null,
 ): LanguageStatus | null {
+  const settings = languageSettingsForAudioSource(selectedSettings,
+    selectedSettings.audioInput === "microphone" ? "microphone" : "system");
   const sourceName = settings.sourceLanguage === "zh_en" ? speechLanguageGuidance(settings).optionLabel(settings.sourceLanguage) : settings.audioInput === "both" && settings.sourceLanguage === "auto"
     ? SOURCE_LANGUAGE_DISPLAY_NAMES.auto : sourceLanguageStatusDisplayName(
     settings.sourceLanguage,

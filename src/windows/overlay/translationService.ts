@@ -21,7 +21,7 @@ export interface TranslationService {
 
 /** Describes the selected route using only credential-free snapshot metadata. */
 export function translationService(
-  settings: Pick<SettingsSnapshot, "profiles" | "activeProfileId" | "targetLanguage">,
+  settings: Pick<SettingsSnapshot, "profiles" | "activeProfileId" | "targetLanguage"> & Partial<Pick<SettingsSnapshot, "audioInput" | "microphoneTranslation">>,
 ): TranslationService | null {
   const profile = activeServiceProfile(settings);
   if (!profile) return null;
@@ -31,7 +31,9 @@ export function translationService(
   // translation; DeepLX must never be presented as a speech recognizer.
   const speechProvider = profile.provider === "deepLX" ? "alibabaCloud" : profile.provider;
   const speechLabel = speechRecognitionDisplayName(profile);
-  const originalOnly = settings.targetLanguage === "original"
+  const microphoneTranslates = (settings.audioInput === "microphone" || settings.audioInput === "both")
+    && settings.microphoneTranslation?.enabled === true;
+  const originalOnly = (settings.targetLanguage === "original" && !microphoneTranslates)
     || (isIndependentAsrProfile(profile) && route === "followService");
   const translationLabel = originalOnly ? I18N.overlay.originalOnly : textTranslationDisplayName(profile);
   const sameXai = profile.provider === "xAIRealtime" && route === "xAI";
