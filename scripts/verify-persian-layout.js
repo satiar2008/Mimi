@@ -1,11 +1,13 @@
 // Uses the real desktop frontend and synthetic native responses in the settings
 // fixture. Run against a browser or Windows WebView2 supporting the Page adapter.
-export async function verifyPersianLayout(page, baseUrl = "http://127.0.0.1:1420") {
+// deviceScaleFactor changes raster density in CDP, not Windows display DPI.
+export async function verifyPersianLayout(page, baseUrl = "http://127.0.0.1:1420", { deviceScaleFactor = 1 } = {}) {
+  if (!Number.isFinite(deviceScaleFactor) || deviceScaleFactor <= 0) throw new Error("Invalid raster density");
   const failures = [];
   const require = (result, label) => { if (!result) failures.push(label); };
   const setup = async width => {
     await page.cdp("Emulation.setDeviceMetricsOverride", {
-      width, height: 760, deviceScaleFactor: 1, mobile: false,
+      width, height: 760, deviceScaleFactor, mobile: false,
     });
     await page.goto(new URL("/scripts/fixtures/settings-layout.html?language=fa-IR", baseUrl).href);
     await page.waitForFunction(() => window.layoutReady === true && document.documentElement.lang === "fa-IR");
@@ -42,11 +44,13 @@ export async function verifyPersianLayout(page, baseUrl = "http://127.0.0.1:1420
             const preview = [...document.querySelectorAll(".subtitle-preview__text > *")];
             return {
               direction: document.documentElement.dir === "rtl" && sidebar.getBoundingClientRect().right > width / 2,
+              density: window.devicePixelRatio,
               overflow: scroll.scrollWidth > scroll.clientWidth + 1,
               preview: preview.length === 2 && preview.map(el => getComputedStyle(el).direction).join() === "ltr,rtl",
             };
           }, { category, theme, width });
           require(result.direction && !result.overflow, `${width}/${theme}/${category} layout`);
+          require(result.density === deviceScaleFactor, `${width}/${theme}/${category} raster density`);
           if (category === "subtitle-settings") require(result.preview, `${width}/${theme} bilingual preview`);
         }
       }
@@ -85,5 +89,5 @@ export async function verifyPersianLayout(page, baseUrl = "http://127.0.0.1:1420
     await page.cdp("Emulation.clearDeviceMetricsOverride", {});
   }
   if (failures.length) throw new Error(failures.join("\n"));
-  return { windowCases: 3, settingsCases: 28, pickerCases: 2, fieldCases: 2, panelCases: 2 };
+  return { deviceScaleFactor, windowCases: 3, settingsCases: 28, pickerCases: 2, fieldCases: 2, panelCases: 2 };
 }
