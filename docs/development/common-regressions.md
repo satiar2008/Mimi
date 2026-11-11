@@ -360,6 +360,26 @@ Keep unconfirmed resources out of all ready-language lists, invalidate earlier
 recognition results when resource work starts, and offer a read-only refresh.
 Do not reset TCC, change signing or delete system assets without evidence.
 
+## Windows native menus and RTL / DPI QA
+
+- HTML `dir` does not mirror an HMENU. Apply the native direction to the real
+  root and submenu items, including after language and session-label updates.
+  A localized cached `MenuItem.text()` value does not establish rendered BiDi
+  order. Review the visible native popup, submenu arrow and selection mark.
+- Native GDI menus displayed RLI/PDI controls as missing glyphs during Persian
+  Windows QA. Use the tested legacy RLE/PDF embedding for native mixed labels;
+  keep the WebView's independently isolated text rendering. Switching back to
+  LTR must remove the native formatting and direction flags. Preserve menu IDs,
+  checked state and submenu handles; the HMENU regression covers repeated cycles.
+- CDP raster-density emulation is not Windows monitor DPI acceptance. Change
+  display scale in Windows Settings, verify actual WebView `devicePixelRatio`
+  without an emulation override, inspect default/minimum native window sizes,
+  and restore the original system scale after the run.
+- If automation cannot target the shell taskbar, `MIMI_UI_TEST=1` together with
+  `MIMI_UI_TEST_TRAY_SHORTCUT=1` enables Ctrl+Shift+F12 for the actual tray menu
+  and Ctrl+Shift+F11 for the actual control panel. These are disabled in normal
+  use. Record this opening method separately from clicking the tray icon itself.
+
 ## Windows process-loopback activation
 
 - A `VT_BLOB` activation `PROPVARIANT` borrows the completion handler's parameter

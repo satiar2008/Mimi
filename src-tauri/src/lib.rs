@@ -45,6 +45,8 @@ mod updater_target;
 mod windows;
 #[cfg(target_os = "windows")]
 mod windows_startup;
+#[cfg(target_os = "windows")]
+mod windows_tray_rtl;
 #[cfg(any(target_os = "windows", test))]
 mod windows_updater_cleanup;
 
@@ -552,6 +554,8 @@ struct NativeMenuLabels {
 
 #[derive(Clone)]
 struct NativeTrayMenuItems {
+    #[cfg(target_os = "windows")]
+    menu: tauri::menu::Menu<tauri::Wry>,
     session_action: MenuItem<tauri::Wry>,
     toggle_devtools: Option<MenuItem<tauri::Wry>>,
     settings: MenuItem<tauri::Wry>,
@@ -969,6 +973,8 @@ fn setup_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
     let quit_item = MenuItemBuilder::with_id("quit", labels.quit).build(app)?;
 
     let menu = menu_builder.item(&settings_item).item(&quit_item).build()?;
+    #[cfg(target_os = "windows")]
+    setup_ui_test_tray_popup(app, menu.clone());
     // Menu-bar icon: a monochrome waveform template (like the original app's
     // `ear.badge.waveform` SF Symbol). Template icons are rendered by macOS at
     // the native menu-bar resolution — crisp at any size and adapting to the
@@ -1073,6 +1079,8 @@ fn setup_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
         .build(app)?;
 
     app.manage(NativeTrayMenuItems {
+        #[cfg(target_os = "windows")]
+        menu: menu.clone(),
         session_action,
         toggle_devtools,
         settings: settings_item,
@@ -1082,6 +1090,8 @@ fn setup_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
         #[cfg(target_os = "macos")]
         show_in_dock,
     });
+    #[cfg(target_os = "windows")]
+    apply_windows_tray_direction(app);
     record_ui_test_native_menu(app);
 
     // Session broadcasts already cover every start/stop path (native menu,
@@ -1155,7 +1165,77 @@ pub(crate) fn refresh_native_tray_language(app: &tauri::AppHandle) {
         let _ = item.set_text(label);
         let _ = item.set_checked(mode == current_mode);
     }
+    #[cfg(target_os = "windows")]
+    apply_windows_tray_direction(app);
     record_ui_test_native_menu(app);
+}
+
+#[cfg(target_os = "windows")]
+fn apply_windows_tray_direction(app: &tauri::AppHandle) {
+    let Some(items) = app.try_state::<NativeTrayMenuItems>() else {
+        return;
+    };
+    let menu = items.menu.clone();
+    let override_language = app
+        .try_state::<AppState>()
+        .and_then(|state| state.settings.preferences().ui_language);
+    let system_language = system_language_code();
+    let rtl =
+        effective_native_menu_language(override_language.as_deref(), system_language.as_deref())
+            == NativeMenuLanguage::Persian;
+    let _ = app.run_on_main_thread(move || {
+        if let Err(label) = windows_tray_rtl::apply(&menu, rtl) {
+            tracing::warn!(label, "native tray direction update failed");
+        }
+    });
+}
+
+/// Opens the very same tray menu for native visual QA when the shell taskbar
+/// is not exposed by accessibility automation. Never registered in normal use.
+#[cfg(target_os = "windows")]
+fn setup_ui_test_tray_popup(app: &tauri::AppHandle, menu: tauri::menu::Menu<tauri::Wry>) {
+    use tauri::menu::ContextMenu;
+    use tauri_plugin_global_shortcut::{
+        Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState,
+    };
+
+    if !commands::app_is_ui_test()
+        || std::env::var("MIMI_UI_TEST_TRAY_SHORTCUT").as_deref() != Ok("1")
+    {
+        return;
+    }
+    let shortcut = Shortcut::new(Some(Modifiers::CONTROL | Modifiers::SHIFT), Code::F12);
+    if app
+        .global_shortcut()
+        .on_shortcut(shortcut, move |app, _, event| {
+            if event.state() != ShortcutState::Pressed {
+                return;
+            }
+            let menu = menu.clone();
+            let current_app = app.clone();
+            let _ = app.run_on_main_thread(move || {
+                if let Some(window) = current_app.get_webview_window("settings") {
+                    let native = window.as_ref().window();
+                    let _ = menu.popup_at(native, tauri::LogicalPosition::new(24.0, 64.0));
+                }
+            });
+        })
+        .is_err()
+    {
+        tracing::warn!(label = "ui_test_tray_shortcut_unavailable");
+    }
+    let control_shortcut = Shortcut::new(Some(Modifiers::CONTROL | Modifiers::SHIFT), Code::F11);
+    if app
+        .global_shortcut()
+        .on_shortcut(control_shortcut, |app, _, event| {
+            if event.state() == ShortcutState::Pressed {
+                windows::OverlayControlWindowManager::toggle_panel(app);
+            }
+        })
+        .is_err()
+    {
+        tracing::warn!(label = "ui_test_control_shortcut_unavailable");
+    }
 }
 
 fn record_ui_test_native_menu(app: &tauri::AppHandle) {
@@ -1197,6 +1277,8 @@ fn refresh_native_tray_session_action(app: &tauri::AppHandle, is_active: bool) {
             .session_action
             .set_text(native_session_action_label(labels, is_active));
     }
+    #[cfg(target_os = "windows")]
+    apply_windows_tray_direction(app);
     record_ui_test_native_menu(app);
 }
 
