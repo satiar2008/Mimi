@@ -1278,6 +1278,25 @@ impl SessionManager {
             || self.active_generation.load(Ordering::SeqCst) != NO_GENERATION
     }
 
+    pub fn microphone_insertion_candidate(
+        &self,
+    ) -> Option<(
+        u64,
+        mimi_runtime::core::microphone_input::MicrophoneInsertion,
+    )> {
+        let _transition = self.generation_transition.lock().unwrap();
+        let controller = self.controller.lock().unwrap();
+        if !controller.state.status.is_active()
+            || !self.sources().contains(&AudioSource::Microphone)
+        {
+            return None;
+        }
+        mimi_runtime::core::microphone_input::MicrophoneInsertion::from_subtitles(
+            &controller.state.subtitles,
+        )
+        .map(|pair| (self.active_generation.load(Ordering::SeqCst), pair))
+    }
+
     /// Serializes a profile or listening-settings mutation with start/stop.
     /// The caller must retain the returned guard until its synchronous store
     /// mutation and persistence have both completed.
@@ -2103,7 +2122,19 @@ impl SessionManager {
                     .audio_evidence
                     .begin_attempt(generation, attempt);
             }
+            // Resolve both routes before opening any capture or provider network.
+            let microphone_configuration = if self.sources().contains(&AudioSource::Microphone) {
+                Some(self.settings.microphone_configuration()?)
+            } else {
+                None
+            };
             if *self.active_audio_input.lock().unwrap() == AudioInput::Both {
+                if microphone_configuration.as_ref().is_some_and(|mic| {
+                    mic.capabilities().input_sample_rate_hz
+                        != configuration.capabilities().input_sample_rate_hz
+                }) {
+                    return Err("microphone_translation_sample_rate_unsupported".into());
+                }
                 let echo = Arc::new(
                     EchoPipeline::spawn(
                         configuration.capabilities().input_sample_rate_hz,
@@ -2123,7 +2154,11 @@ impl SessionManager {
                 self.sources(),
                 |source| {
                     Arc::clone(&self).connect_source(
-                        configuration.clone(),
+                        if source == AudioSource::Microphone {
+                            microphone_configuration.as_ref().unwrap().clone()
+                        } else {
+                            configuration.clone()
+                        },
                         generation,
                         attempt,
                         source,

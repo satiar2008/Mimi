@@ -114,7 +114,16 @@ export interface SessionStateEvent {
 // Settings
 // ---------------------------------------------------------------------------
 
+export interface MicrophoneTranslation {
+  enabled: boolean;
+  sourceLanguage: SourceLanguage;
+  /** null follows the explicitly selected incoming speech language. */
+  targetLanguage: TargetLanguage | null;
+}
+
 export interface SettingsSnapshot {
+  microphoneTranslation?: MicrophoneTranslation;
+  microphoneTextInsertionAvailable?: boolean;
   /** Availability metadata only; credential bytes are never in snapshots. */
   credentialStorage?: "keychain" | "localFile";
   /** Service profiles never contain credential material, only availability. */
@@ -183,6 +192,7 @@ export type SubtitleColor = SubtitlePresetColor | `#${string}`;
 export type SubtitleAlignment = "left" | "center" | "right";
 
 export interface SettingsDraft {
+  microphoneTranslation?: MicrophoneTranslation;
   sourceLanguage?: SourceLanguage;
   targetLanguage?: TargetLanguage;
   translationMode?: TranslationMode;

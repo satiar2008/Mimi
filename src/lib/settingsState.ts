@@ -191,6 +191,7 @@ export function mergeSettingsSnapshot(
     || (draft.windowsAudioSource !== undefined && draft.windowsAudioSource !== (current.windowsAudioSource ?? ""));
   return {
     ...current,
+    microphoneTranslation: draft.microphoneTranslation ?? current.microphoneTranslation,
     sourceLanguage: draft.sourceLanguage ?? current.sourceLanguage,
     targetLanguage: draft.targetLanguage ?? current.targetLanguage,
     translationMode: draft.translationMode ?? current.translationMode,

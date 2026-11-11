@@ -79,6 +79,13 @@ export function sessionStart(): Promise<void> {
   return invoke("session_start");
 }
 
+export function microphoneInsertTranslation(): Promise<void> {
+  return isTauri ? invoke("microphone_insert_translation") : Promise.reject(new Error("microphone_input_unsupported"));
+}
+export function microphoneCancelInsertion(): Promise<void> {
+  return isTauri ? invoke("microphone_cancel_insertion") : Promise.resolve();
+}
+
 export type AlibabaSetupPage = "guide" | "apiKey" | "workspace";
 export function openAlibabaSetupPage(page: AlibabaSetupPage): Promise<void> {
   return invoke("open_alibaba_setup_page", { page });

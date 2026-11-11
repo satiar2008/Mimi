@@ -7,6 +7,8 @@ pub mod credentials;
 pub mod development_debug;
 pub mod diagnostics;
 pub mod health;
+pub mod microphone_input;
+pub mod microphone_translation;
 pub mod models;
 pub mod network_proxy;
 pub mod openai_transcript_committer;

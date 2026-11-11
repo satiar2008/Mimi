@@ -16,6 +16,26 @@ regressions; production capture and the text connection-check button use Rust.
 `shared/translation-contracts.json` and `shared/realtime-display-contracts.json`
 provide common synthetic wire and display cases.
 
+## Independent microphone languages and Windows text insertion
+
+Desktop voice settings expose an explicit independent microphone-language
+choice. Resolution lives in `mimi-runtime::core::microphone_translation`;
+desktop preferences/capture choose that configuration for the microphone lane
+without changing the system lane. Following incoming speech means its selected
+language; automatic incoming recognition requires a manual microphone target.
+Existing installations retain shared languages until the opt-in is enabled.
+Android does not yet expose or wire this preference, despite sharing the resolver.
+
+Windows additionally offers manual insertion of one confirmed microphone pair
+into the focused writable editor after a three-second target-selection delay.
+Selection/control-character handling lives in the shared runtime; UI Automation
+validation and Unicode input are Windows adapters. Passwords, read-only controls,
+unknown editor capabilities and held modifier keys fail closed. No clipboard
+access, automatic submission or continuous dictation is implemented. macOS,
+Linux and Android do not expose this input-injection action. New preference and
+action copy currently has Persian and English variants; other desktop locales
+use English for this new section.
+
 ## xAI recognition and text translation
 
 Desktop and Android expose xAI streaming ASR through their existing independent

@@ -27,6 +27,7 @@ import { Timeline } from "./Timeline";
 import { useResolvedMotion } from "./animation";
 import { useSubtitleTail } from "./useSubtitleTail";
 import type { SourceSubtitleSnapshot } from "../../lib/types";
+import { languageSettingsForAudioSource } from "../../lib/microphoneTranslation";
 import { overlaySessionChromeLayout } from "./overlayChromeLayout";
 import { minimumOverlayHeight } from "./overlayMinimumHeight";
 import { useSessionAction } from "./useSessionAction";
@@ -171,8 +172,8 @@ export function OverlayWindow() {
   const primaryAudioSource = session.subtitles.tracks?.[0]?.audioSource
     ?? (settings.audioInput === "microphone" ? "microphone" : "system");
   const running = OVERLAY_ACTIVITY_PHASES[phase].animationSpeed > 0;
-  const primaryTail = useSubtitleTail(primarySubtitles, settings, dual ? systemTrack ?? EMPTY_SYSTEM : session, running, atomicProvider, "primary", streamingProvider);
-  const microphoneTail = useSubtitleTail(microphoneSubtitles, settings, microphoneSubtitles, running, atomicProvider, "microphone", streamingProvider);
+  const primaryTail = useSubtitleTail(primarySubtitles, languageSettingsForAudioSource(settings, dual ? "system" : primaryAudioSource), dual ? systemTrack ?? EMPTY_SYSTEM : session, running, atomicProvider, "primary", streamingProvider);
+  const microphoneTail = useSubtitleTail(microphoneSubtitles, languageSettingsForAudioSource(settings, "microphone"), microphoneSubtitles, running, atomicProvider, "microphone", streamingProvider);
   // Limit only live following. Deliberate reading keeps the bounded session
   // history so a new confirmation cannot evict the sentence being read.
   const displayHistory = useMemo(() => readingHistory

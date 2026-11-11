@@ -277,6 +277,7 @@ pub struct OverlayFrame {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Preferences {
+    pub microphone_translation: crate::core::microphone_translation::MicrophoneTranslation,
     pub source_language: SourceLanguage,
     pub target_language: TargetLanguage,
     pub translation_mode: TranslationMode,
@@ -323,6 +324,7 @@ pub struct Preferences {
 impl Default for Preferences {
     fn default() -> Self {
         Self {
+            microphone_translation: Default::default(),
             source_language: SourceLanguage::Automatic,
             target_language: TargetLanguage::SimplifiedChinese,
             translation_mode: TranslationMode::Turbo,
@@ -3062,6 +3064,19 @@ impl SettingsStore {
     pub fn configuration(&self) -> Result<LiveTranslationConfiguration, String> {
         let profile = self.active_profile()?;
         self.configuration_for_profile(&profile)
+    }
+
+    /// Resolve the microphone's own credentials and capabilities, including
+    /// text credentials when system audio is configured as recognition-only.
+    pub fn microphone_configuration(&self) -> Result<LiveTranslationConfiguration, String> {
+        let profile = self.active_profile()?;
+        let mut prefs = self.preferences();
+        let (source, target) = prefs
+            .microphone_translation
+            .languages(prefs.source_language, prefs.target_language)?;
+        prefs.source_language = source;
+        prefs.target_language = target;
+        self.configuration_with_profile_preferences(&profile, prefs)
     }
 
     /// Reads only the requested profile's private credentials. A connection
@@ -12610,6 +12625,61 @@ mod tests {
         .unwrap();
         let reloaded = SettingsStore::at_path(directory.clone(), Box::new(fake));
         assert_eq!(reloaded.preferences().subtitle_background_opacity, 100);
+        std::fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[test]
+    fn microphone_translation_routes_and_preferences_are_independent() {
+        let directory = std::env::temp_dir().join(format!(
+            "mimi-microphone-languages-{}",
+            uuid::Uuid::new_v4().simple()
+        ));
+        let fake = FakeSecretStore::default();
+        let store = SettingsStore::at_path(directory.clone(), Box::new(fake.clone()));
+        store
+            .save_api_key(DEFAULT_ALIBABA_PROFILE_ID, "test-key")
+            .unwrap();
+        store
+            .save_preferences(|prefs| {
+                prefs.source_language = SourceLanguage::English;
+                prefs.target_language = TargetLanguage::Persian;
+            })
+            .unwrap();
+        let original = store.configuration().unwrap();
+        assert_eq!(store.microphone_configuration().unwrap(), original);
+        store
+            .save_preferences(|prefs| {
+                prefs.microphone_translation.enabled = true;
+                // Use English recognition here; source support is provider-specific.
+                prefs.microphone_translation.source_language = SourceLanguage::English;
+            })
+            .unwrap();
+        assert_eq!(store.configuration().unwrap(), original);
+        assert_eq!(
+            store.microphone_configuration().unwrap().target_language,
+            TargetLanguage::English
+        );
+        let reloaded = SettingsStore::at_path(directory.clone(), Box::new(fake));
+        assert_eq!(
+            reloaded.preferences().microphone_translation,
+            store.preferences().microphone_translation
+        );
+        reloaded
+            .save_preferences(|prefs| prefs.source_language = SourceLanguage::Automatic)
+            .unwrap();
+        assert_eq!(
+            reloaded.microphone_configuration().unwrap_err(),
+            "microphone_translation_incoming_language_required"
+        );
+        reloaded
+            .save_preferences(|prefs| {
+                prefs.microphone_translation.target_language = Some(TargetLanguage::German)
+            })
+            .unwrap();
+        assert_eq!(
+            reloaded.microphone_configuration().unwrap().target_language,
+            TargetLanguage::German
+        );
         std::fs::remove_dir_all(directory).unwrap();
     }
 

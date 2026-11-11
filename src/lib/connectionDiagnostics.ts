@@ -1,3 +1,4 @@
+import { microphoneTranslationError } from "./microphoneTranslation";
 import { SUPPLEMENTAL_EN } from "./locales/supplemental-schema";
 import { supplemental } from "./locales/supplemental";
 import { audio3ErrorMessage, audio3ErrorRequiresConfiguration } from "./audio3Errors";
@@ -420,6 +421,7 @@ export function profileErrorMessage(error: unknown, fallback = I18N.settings.pro
 /** Exact safe labels only: navigation never starts capture or downloads resources. */
 export function sessionErrorSettingsTarget(error: unknown): SettingsNavigationTarget | null {
   const label = error instanceof Error ? error.message : error;
+  if (typeof label === "string" && label.startsWith("microphone_translation_")) return "voice";
   if (typeof label === "string" && [
     "apple_speech_assets_missing", "apple_speech_preparing", "apple_speech_prepare_failed",
     "apple_speech_service_unavailable", "apple_speech_reservation_limit", "apple_speech_download_cancelled",
@@ -476,5 +478,5 @@ export function languageActionErrorMessage(error: unknown, fallback: string): st
 /** Reuse the same allowlisted provider causes for pause/resume and start actions. */
 export function sessionActionErrorMessage(error: unknown, fallback: string): string {
   const label = error instanceof Error ? error.message : error;
-  return credentialErrorMessage(label) ?? (typeof label === "string" ? audio3ErrorMessage(label) : null) ?? fallback;
+  return microphoneTranslationError(label) ?? credentialErrorMessage(label) ?? (typeof label === "string" ? audio3ErrorMessage(label) : null) ?? fallback;
 }

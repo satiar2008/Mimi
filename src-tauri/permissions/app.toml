@@ -16,6 +16,8 @@ identifier = "app-settings"
 description = "Allows the settings window to manage the live-subtitle session, preferences, profiles, updater fixture mode, and fixed release and provider setup pages."
 commands.allow = [
   "settings_save",
+  "microphone_insert_translation",
+  "microphone_cancel_insertion",
   "installed_font_families",
   "get_apple_speech_support",
   "prepare_apple_speech_language",

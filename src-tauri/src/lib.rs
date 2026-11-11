@@ -35,6 +35,7 @@ mod live_translate_input_probe;
 mod mac_dock;
 #[cfg(target_os = "macos")]
 mod mac_native_quit;
+mod microphone_input;
 #[cfg(all(test, feature = "development-debugger", target_os = "macos"))]
 mod provider_public_audio_probe;
 mod session_export;
@@ -315,6 +316,7 @@ pub fn run() {
                     windows::OverlayControlWindowManager::cancel_scheduled_dismiss(app);
                 }
                 WindowEvent::CloseRequested { api, .. } if window.label() == "settings" => {
+                    microphone_input::cancel();
                     // AppIndicator can accept an icon even when the desktop
                     // has no tray host. Linux users minimize to keep running;
                     // closing Settings must not strand an invisible process.
@@ -448,6 +450,8 @@ pub fn run() {
             commands::open_text_translation_setup_page,
             commands::open_service_setup_page,
             commands::settings_save,
+            commands::microphone_insert_translation,
+            commands::microphone_cancel_insertion,
             commands::profile_create,
             commands::profile_duplicate,
             commands::profile_update,

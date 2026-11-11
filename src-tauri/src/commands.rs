@@ -228,6 +228,8 @@ impl LanguageCapabilitiesPayload {
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SettingsSnapshotPayload {
+    pub microphone_translation: crate::core::microphone_translation::MicrophoneTranslation,
+    pub microphone_text_insertion_available: bool,
     pub profiles: Vec<ServiceProfilePayload>,
     pub credential_storage: &'static str,
     pub active_profile_id: String,
@@ -1305,6 +1307,8 @@ mod tests {
     #[test]
     fn settings_payload_is_camel_case_and_write_only() {
         let payload = SettingsSnapshotPayload {
+            microphone_translation: Default::default(),
+            microphone_text_insertion_available: cfg!(target_os = "windows"),
             credential_storage: "keychain",
             profiles: vec![ServiceProfilePayload {
                 qwen_mt_model: Default::default(),
@@ -1649,6 +1653,8 @@ impl SettingsSnapshotPayload {
                 LanguageCapabilitiesPayload::from_profile(profile, prefs.target_language)
             });
         Ok(Self {
+            microphone_translation: prefs.microphone_translation.clone(),
+            microphone_text_insertion_available: cfg!(target_os = "windows"),
             credential_storage: store.credential_storage(),
             profiles: profiles
                 .into_iter()
@@ -1694,6 +1700,7 @@ impl SettingsSnapshotPayload {
 #[derive(Debug, Clone, Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct SettingsDraft {
+    pub microphone_translation: Option<crate::core::microphone_translation::MicrophoneTranslation>,
     pub source_language: Option<SourceLanguage>,
     pub target_language: Option<TargetLanguage>,
     pub translation_mode: Option<TranslationMode>,
@@ -1722,6 +1729,26 @@ pub struct SettingsDraft {
     pub system_audio_target: Option<crate::core::system_audio_target::SystemAudioTarget>,
     pub show_in_dock: Option<bool>,
     pub network_proxy: Option<ProxyConfig>,
+}
+
+#[tauri::command]
+pub async fn microphone_insert_translation(
+    window: tauri::WebviewWindow,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    if window.label() != "settings" || app_is_ui_test() {
+        return Err("microphone_input_unsupported".into());
+    }
+    crate::microphone_input::insert(Arc::clone(&state.session)).await
+}
+
+#[tauri::command]
+pub fn microphone_cancel_insertion(window: tauri::WebviewWindow) -> Result<(), String> {
+    if window.label() != "settings" {
+        return Err("microphone_input_unsupported".into());
+    }
+    crate::microphone_input::cancel();
+    Ok(())
 }
 
 /// Reads public settings and per-profile credential presence. API-key values
@@ -2129,6 +2156,7 @@ pub fn open_tencent_setup_page(app: AppHandle, page: TencentSetupPage) -> Result
 fn ensure_settings_draft_window_allowed(label: &str, draft: &SettingsDraft) -> Result<(), String> {
     if (draft.retain_session_history.is_some()
         || draft.record_session_audio.is_some()
+        || draft.microphone_translation.is_some()
         || draft.audio_input.is_some()
         || draft.windows_audio_source.is_some()
         || draft.system_audio_target.is_some()
@@ -2166,6 +2194,7 @@ async fn apply_settings_draft(
         || draft.translation_mode.is_some()
         || draft.retain_session_history.is_some()
         || draft.record_session_audio.is_some()
+        || draft.microphone_translation.is_some()
         || draft.audio_input.is_some()
         || draft.windows_audio_source.is_some()
         || draft.system_audio_target.is_some()
@@ -2269,6 +2298,7 @@ fn apply_settings_draft_guarded(
         || draft.ui_language.is_some()
         || draft.retain_session_history.is_some()
         || draft.record_session_audio.is_some()
+        || draft.microphone_translation.is_some()
         || draft.audio_input.is_some()
         || draft.windows_audio_source.is_some()
         || draft.system_audio_target.is_some()
@@ -2317,6 +2347,9 @@ fn apply_settings_draft_guarded(
             }
             if let Some(enabled) = draft.retain_session_history {
                 prefs.retain_session_history = enabled;
+            }
+            if let Some(choice) = &draft.microphone_translation {
+                prefs.microphone_translation = choice.clone();
             }
             prefs.apply_audio_preferences(draft.audio_input, draft.record_session_audio);
             if let Some(source) = draft.windows_audio_source {
@@ -2404,6 +2437,7 @@ fn apply_settings_draft_guarded(
     // the saved value so a combined draft cannot retain old-source audio.
     let recording = (target_changed
         || windows_source_changed
+        || draft.microphone_translation.is_some()
         || draft.audio_input.is_some()
         || draft.record_session_audio.is_some())
     .then(|| state.settings.preferences().record_session_audio);
@@ -2519,6 +2553,7 @@ fn ensure_settings_draft_allowed(draft: &SettingsDraft, is_active: bool) -> Resu
             || draft.translation_mode.is_some()
             || draft.retain_session_history.is_some()
             || draft.record_session_audio.is_some()
+            || draft.microphone_translation.is_some()
             || draft.audio_input.is_some()
             || draft.windows_audio_source.is_some()
             || draft.system_audio_target.is_some())

@@ -468,6 +468,9 @@ export const useStore = create<StoreState>()((set, get) => ({
 
   saveSettings: async (draft) => {
     const previous = get().settings;
+    if (draft.microphoneTranslation !== undefined && (get().session.isActive || get().session.isPaused || sessionSettingsAreChanging(get().session))) {
+      throw new Error("microphone_translation_requires_stop");
+    }
     if ((draft.systemAudioTarget !== undefined || (draft.audioInput !== undefined && draft.audioInput !== (previous.audioInput ?? "system"))) &&
       (get().session.isActive || get().session.isPaused || sessionSettingsAreChanging(get().session))) {
       throw new Error("audio_input_change_requires_stop");

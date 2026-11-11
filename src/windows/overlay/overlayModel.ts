@@ -1,3 +1,4 @@
+import { languageSettingsForAudioSource } from "../../lib/microphoneTranslation";
 import { speechLanguageGuidance, targetLanguageOptionLabel } from "../../lib/speechLanguageGuidance";
 import { credentialErrorMessage } from "../../lib/connectionDiagnostics";
 import { subtitleLaneFontSize, subtitleLineHeight } from "../../lib/subtitleTypography";
@@ -66,7 +67,7 @@ export interface LiveTail {
 }
 
 function isSameLanguageMode(
-  settings: Pick<SettingsSnapshot, "sourceLanguage" | "targetLanguage">,
+  settings: Pick<SettingsSnapshot, "sourceLanguage" | "targetLanguage" | "microphoneTranslation">,
   detectedLanguage: string | null,
 ): boolean {
   if (settings.targetLanguage === "original") return true;
@@ -82,7 +83,7 @@ function isSameLanguageMode(
 }
 
 export function isWaitingForFinalTranslation(
-  settings: Pick<SettingsSnapshot, "sourceLanguage" | "targetLanguage">,
+  settings: Pick<SettingsSnapshot, "sourceLanguage" | "targetLanguage" | "microphoneTranslation">,
   detectedLanguage: string | null,
   isTranslationPending: boolean,
 ): boolean {
@@ -91,14 +92,14 @@ export function isWaitingForFinalTranslation(
 }
 
 export function pendingSourceTranslation(subtitles: SubtitleSnapshot,
-  settings: Pick<SettingsSnapshot, "sourceLanguage" | "targetLanguage">): boolean | undefined {
+  settings: Pick<SettingsSnapshot, "sourceLanguage" | "targetLanguage" | "microphoneTranslation">): boolean | undefined {
   return subtitles.tracks?.length ? subtitles.tracks.some(track =>
-    isWaitingForFinalTranslation(settings, track.detectedLanguage, track.isTranslationPending)) : undefined;
+    isWaitingForFinalTranslation(languageSettingsForAudioSource(settings, track.audioSource), track.detectedLanguage, track.isTranslationPending)) : undefined;
 }
 
 export function computeActivityPhase(
   session: SessionStateEvent,
-  settings: Pick<SettingsSnapshot, "sourceLanguage" | "targetLanguage">,
+  settings: Pick<SettingsSnapshot, "sourceLanguage" | "targetLanguage" | "microphoneTranslation">,
 ): OverlayActivityPhaseKind {
   const source = session.subtitles.source;
   return computeActivityPhaseFromSignals(
@@ -128,7 +129,7 @@ interface ActivityPhaseSignals {
 
 export function computeActivityPhaseFromSignals(
   signals: ActivityPhaseSignals,
-  settings: Pick<SettingsSnapshot, "sourceLanguage" | "targetLanguage">,
+  settings: Pick<SettingsSnapshot, "sourceLanguage" | "targetLanguage" | "microphoneTranslation">,
 ): OverlayActivityPhaseKind {
   if (signals.statusKind === "error") return "error";
   if (signals.statusKind === "idle") return "idle";
@@ -158,7 +159,7 @@ export function computeActivityPhaseFromSignals(
 
 export function emptyStateText(
   session: SessionStateEvent,
-  settings: Pick<SettingsSnapshot, "sourceLanguage" | "targetLanguage">,
+  settings: Pick<SettingsSnapshot, "sourceLanguage" | "targetLanguage" | "microphoneTranslation">,
 ): string {
   if (session.isPaused) return I18N.overlay.paused;
 
@@ -368,7 +369,7 @@ interface LiveSubtitlePreview {
  */
 export function visibleLiveSubtitle(
   subtitles: SubtitleSnapshot,
-  settings: Pick<SettingsSnapshot, "sourceLanguage" | "targetLanguage"> &
+  settings: Pick<SettingsSnapshot, "sourceLanguage" | "targetLanguage" | "microphoneTranslation"> &
     Partial<Pick<SettingsSnapshot, "subtitleDisplayMode" | "showIntermediateSubtitles">>,
   detectedLanguage: string | null,
   isTranslationPending: boolean,
@@ -432,7 +433,7 @@ export function visibleLiveSubtitle(
  */
 export function visibleLiveSubtitles(
   subtitles: SubtitleSnapshot,
-  settings: Pick<SettingsSnapshot, "sourceLanguage" | "targetLanguage"> &
+  settings: Pick<SettingsSnapshot, "sourceLanguage" | "targetLanguage" | "microphoneTranslation"> &
     Partial<Pick<SettingsSnapshot, "subtitleDisplayMode" | "showIntermediateSubtitles">>,
   detectedLanguage: string | null,
   isTranslationPending: boolean,
