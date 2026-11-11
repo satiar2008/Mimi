@@ -6,7 +6,32 @@ import { setStoredUiLanguage } from "../../lib/i18n";
 import { useStore } from "../../lib/store";
 import { LanguageStatusCapsule } from "./LanguageStatusCapsule";
 import { audioInputLabel } from "../../lib/audioInput";
+import { languageStatus } from "../overlay/overlayModel";
 import { recordingStatusLabel } from "../../lib/recordingStatus";
+
+it("keeps visible microphone language labels consistent with its accessible direction", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  vi.stubGlobal("matchMedia", () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
+  setStoredUiLanguage("fa-IR");
+  const host = document.createElement("div"); document.body.append(host);
+  const root = createRoot(host);
+  const selected = { ...useStore.getState().settings, sourceLanguage: "en" as const, targetLanguage: "fa" as const,
+    microphoneTranslation: { enabled: true, sourceLanguage: "fa" as const, targetLanguage: null } };
+  try {
+    for (const audioInput of ["microphone", "both"] as const) {
+      const settings = { ...selected, audioInput };
+      const status = languageStatus(settings, null)!;
+      await act(async () => root.render(<LanguageStatusCapsule settings={settings} status={status} phase="listening"
+        isPaused={false} isWaitingForFinalTranslation={false} expanded={false} onToggle={() => {}} />));
+      const summary = host.querySelector('.overlay-control-island__summary')!;
+      expect(summary.querySelector('strong')?.textContent).toBe(status.source);
+      expect(summary.lastElementChild?.textContent).toBe(status.target);
+      expect(host.querySelector('button')?.getAttribute('aria-label')).toContain(status.target);
+    }
+  } finally {
+    await act(() => root.unmount()); host.remove(); setStoredUiLanguage("system"); vi.unstubAllGlobals();
+  }
+});
 
 it("keeps actual recording feedback in the existing control and replaces duplicate paused copy", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);

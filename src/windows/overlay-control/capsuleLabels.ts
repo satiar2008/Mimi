@@ -1,4 +1,5 @@
 import { SUPPLEMENTAL_EN } from "../../lib/locales/supplemental-schema";
+import { languageSettingsForAudioSource } from "../../lib/microphoneTranslation";
 import { supplemental } from "../../lib/locales/supplemental";
 import { activeServiceProfile, isCustomSpeechProvider } from "../../lib/providerCapabilities";
 import { effectiveUiLanguage } from "../../lib/i18n";
@@ -11,7 +12,9 @@ const labels = {
   ...supplemental.capsuleLabels_labels,
 };
 
-export function capsuleLabels(settings: Pick<SettingsSnapshot, "sourceLanguage" | "targetLanguage"> & Partial<Pick<SettingsSnapshot, "profiles" | "activeProfileId">>, phase: "error" | "idle" | "paused" | "translating" | "connecting" | "stopping" | null, language = effectiveUiLanguage()) {
+export function capsuleLabels(selectedSettings: Pick<SettingsSnapshot, "sourceLanguage" | "targetLanguage"> & Partial<Pick<SettingsSnapshot, "profiles" | "activeProfileId" | "audioInput" | "microphoneTranslation">>, phase: "error" | "idle" | "paused" | "translating" | "connecting" | "stopping" | null, language = effectiveUiLanguage()) {
+  const settings = languageSettingsForAudioSource(selectedSettings,
+    selectedSettings.audioInput === "microphone" ? "microphone" : "system");
   const text = labels[language];
   const profile = settings.profiles && settings.activeProfileId ? activeServiceProfile({ profiles: settings.profiles, activeProfileId: settings.activeProfileId }) : undefined;
   const bilingual = profile?.provider === "volcanoEngine";

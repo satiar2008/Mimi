@@ -36,3 +36,9 @@ it.each([["zh", "中英互译"], ["en", "Chinese ↔ English"], ["ja", "中国�
   expect(capsuleLabels({ ...settings, profiles: [...settings.profiles] }, null, language)).toEqual({ source: label, target: label, phase: null });
   expect(capsuleLabels({ ...settings, profiles: [{ ...settings.profiles[0], provider: "tencentCloud" }] }, null, language).source).not.toBe(label);
 });
+it("uses the microphone-only direction in visible compact labels", () => {
+  const settings = { sourceLanguage: "en" as const, targetLanguage: "fa" as const,
+    microphoneTranslation: { enabled: true, sourceLanguage: "fa" as const, targetLanguage: null } };
+  expect(capsuleLabels({ ...settings, audioInput: "microphone" }, null, "en")).toMatchObject({ source: "Persian", target: "English" });
+  expect(capsuleLabels({ ...settings, audioInput: "both" }, null, "en")).toMatchObject({ source: "English", target: "Persian" });
+});

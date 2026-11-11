@@ -254,6 +254,12 @@ disappearing notification.
 
 ## Cross-page review
 
+Independent input languages must reach both the visible compact capsule labels
+and its accessible/full language status. Checking only aria-label or the language
+resolver misses a compact-label helper that still reads the system route. Cover
+microphone-only and both-input modes in the actual capsule component and inspect
+its rendered text, retaining the incoming-language controls as a distinct route.
+
 Before calling a UI consistency fix complete:
 
 1. Find sibling instances across settings categories, native tray menu and overlay.
