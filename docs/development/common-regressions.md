@@ -375,6 +375,10 @@ Do not reset TCC, change signing or delete system assets without evidence.
   display scale in Windows Settings, verify actual WebView `devicePixelRatio`
   without an emulation override, inspect default/minimum native window sizes,
   and restore the original system scale after the run.
+- An Edge headless launcher can exit while its actual browser and GPU process
+  remain alive. Close an owned test browser through CDP `Browser.close`, then
+  verify its task-specific `--user-data-dir` is no longer in use before moving
+  or removing the disposable profile. Do not infer cleanup from launcher exit.
 - If automation cannot target the shell taskbar, `MIMI_UI_TEST=1` together with
   `MIMI_UI_TEST_TRAY_SHORTCUT=1` enables Ctrl+Shift+F12 for the actual tray menu
   and Ctrl+Shift+F11 for the actual control panel. These are disabled in normal
