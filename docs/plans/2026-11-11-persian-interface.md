@@ -64,6 +64,41 @@
    متنی دسکتاپ و با آزمون‌های Gradle و آزمون رابط روی دستگاه یا شبیه‌ساز
    انجام شود.
 
+## بستهٔ مستقل ویندوز
+
+پیکربندی `src-tauri/tauri.fa.conf.json` نام «Mimi فارسی» و شناسهٔ
+`app.satiar2008.mimi.fa` را برای نصب کنار نسخهٔ اصلی تعیین می‌کند.
+تنظیمات و فایل اعتبارنامه‌ها مستقل‌اند و اعتبارنامهٔ قدیمی نسخهٔ اصلی
+وارد نمی‌شود. این بسته به‌روزرسانی خودکار upstream ندارد؛ دکمهٔ انتشارها
+صفحهٔ فورک را باز می‌کند. انتشار عمومی و امضای کد مرحله‌ای جداست.
+
+پس از آماده‌سازی Rust، ابزارهای C++، Windows SDK و وابستگی‌های npm،
+فرمان ساخت NSIS در ویندوز چنین است:
+
+```powershell
+npm run tauri -- build --config src-tauri/tauri.fa.conf.json --bundles nsis -- --locked --profile local-package
+```
+
+برای آزمون تکرارپذیر هر سه پنجره، برنامهٔ نصب‌شده را با متغیر
+`MIMI_UI_TEST=1` و پوشهٔ اختصاصی `MIMI_UI_TEST_PREFERENCES_DIR` اجرا کنید.
+در `preferences.json` این پوشه، `ui_language` برابر `en`،
+`target_language` برابر `fa`، `audio_input` برابر `both` و
+`subtitle_display_mode` برابر `bilingual` باشد.
+`MIMI_UI_TEST_NATIVE_MENU_FILE` را به `native-menu.json` در همان پوشه
+و `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS` را به
+`--remote-debugging-port=14383` تنظیم کنید. سپس اجرا کنید:
+
+```powershell
+node scripts/verify-native-persian.mjs http://127.0.0.1:14383 <UI-test-directory> <optional-evidence-directory>
+```
+
+این آزمون پیش از شروع نشست، حالت UI-test را بررسی می‌کند و با نشست
+مصنوعی بدون سرویس یا ضبط صدا، انتخاب فارسی، RTL سه پنجره، متن مختلط،
+ذخیرهٔ زبان و برچسب‌های واقعی اشیای منوی بومی را می‌سنجد. تصویر خود
+پنجره‌ها در صورت تعیین پوشهٔ شواهد ذخیره می‌شود. مشاهدهٔ بصری بازشدن
+منوی سینی، Narrator و مقیاس نمایش ویندوز جداگانه بررسی شوند. پس از
+خروج عادی برنامه، متغیرهای آزمایشی را برای اجرای روزمره حذف کنید.
+
 ## فازهای بعدی
 
 - خواندن ترجمه با TTS، با انتخاب سرویس و صدا، کنترل قطع پخش و جلوگیری

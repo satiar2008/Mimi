@@ -24,6 +24,7 @@ use tauri_plugin_opener::OpenerExt;
 const SETTINGS_NAVIGATION_EVENT: &str = "settings-navigate";
 const SETTINGS_NAVIGATION_READY_EVENT: &str = "settings-navigation-ready";
 const RELEASES_LATEST_URL: &str = "https://github.com/yuxino/mimi/releases/latest";
+const PERSIAN_RELEASES_URL: &str = "https://github.com/satiar2008/Mimi/releases";
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
@@ -1945,12 +1946,15 @@ pub fn app_is_linux_package() -> bool {
 /// or widen the URL, and no generic opener permission is exposed to WebViews.
 #[tauri::command]
 pub fn app_open_releases(app: AppHandle) -> Result<(), String> {
-    app.opener()
-        .open_url(RELEASES_LATEST_URL, None::<&str>)
-        .map_err(|_| {
-            tracing::warn!(label = "system_opener_failed", "release page open failed");
-            "Could not open the release page.".to_string()
-        })
+    let url = if app.config().identifier == crate::settings_store::PERSIAN_APPLICATION_IDENTIFIER {
+        PERSIAN_RELEASES_URL
+    } else {
+        RELEASES_LATEST_URL
+    };
+    app.opener().open_url(url, None::<&str>).map_err(|_| {
+        tracing::warn!(label = "system_opener_failed", "release page open failed");
+        "Could not open the release page.".to_string()
+    })
 }
 
 #[derive(Debug, Clone, Copy, Deserialize)]

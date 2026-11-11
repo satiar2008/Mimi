@@ -20,7 +20,7 @@ export function SoftwareUpdate({ active = true, session = softwareUpdateSession 
   const { beginToast } = useSettingsToast();
   useEffect(() => { if (active) void session.enter(); }, [active, session]);
 
-  const manualDistribution = environment === "portable" || environment === "linuxPackage";
+  const manualDistribution = environment === "portable" || environment === "linuxPackage" || environment === "manual";
   const interaction = updateInteraction(state);
   const update = "update" in state ? state.update : undefined;
   const verifying = state.kind === "downloading" && state.transferComplete;
@@ -56,7 +56,7 @@ export function SoftwareUpdate({ active = true, session = softwareUpdateSession 
           <div className="software-update__identity">
             <span className="settings-row__label">
               {I18N.settings.softwareUpdate}
-              {manualDistribution && <SettingsHelp text={environment === "linuxPackage"
+              {manualDistribution && environment !== "manual" && <SettingsHelp text={environment === "linuxPackage"
                 ? I18N.settings.linuxPackageUpdateDescription : I18N.settings.portableUpdateDescription} label={I18N.settings.helpLabel} />}
             </span>
             <div className="software-update__versions">

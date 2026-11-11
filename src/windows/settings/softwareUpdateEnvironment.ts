@@ -7,7 +7,7 @@ import {
 } from "./softwareUpdater";
 
 type UpdateEnvironment =
-  | { kind: "portable" | "linuxPackage"; currentVersion: string }
+  | { kind: "portable" | "linuxPackage" | "manual"; currentVersion: string }
   | { kind: "installed"; updater: SoftwareUpdater };
 
 export async function createUpdaterForEnvironment(): Promise<UpdateEnvironment> {
@@ -19,6 +19,11 @@ export async function createUpdaterForEnvironment(): Promise<UpdateEnvironment> 
         updateVersion: null,
       }),
     };
+  }
+
+  const { getIdentifier, getVersion } = await import("@tauri-apps/api/app");
+  if (await getIdentifier() === "app.satiar2008.mimi.fa") {
+    return { kind: "manual", currentVersion: await getVersion() };
   }
 
   if (isWindowsUserAgent()) {

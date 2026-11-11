@@ -5191,6 +5191,16 @@ impl SessionManager {
                         "Mimi 麦克风测试：可以，我能看到。",
                     ),
                 };
+                let translation = if preferences.ui_language.as_deref() == Some("fa-IR") {
+                    match source {
+                        AudioSource::System => "به‌روزرسانی OpenAI (GPT-4o) ساعت ۱۲:۳۴ آماده شد.",
+                        AudioSource::Microphone => {
+                            "راهنمای https://example.com/help (v2.1) را باز کنید."
+                        }
+                    }
+                } else {
+                    translation
+                };
                 self.controller.lock().unwrap().handle_from(
                     source,
                     LiveTranslateServerEvent::SubtitleFinalPair {

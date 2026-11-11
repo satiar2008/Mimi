@@ -36,6 +36,8 @@ use std::sync::Mutex;
 
 pub const PROFILE_KEYCHAIN_SERVICE: &str = "app.yuxino.mimi.credentials.profiles";
 pub const DEVELOPMENT_APPLICATION_IDENTIFIER: &str = "app.yuxino.mimi.dev";
+pub const PERSIAN_APPLICATION_IDENTIFIER: &str = "app.satiar2008.mimi.fa";
+const PERSIAN_PROFILE_KEYCHAIN_SERVICE: &str = "app.satiar2008.mimi.fa.credentials.profiles";
 // Metadata compatibility only: these IDs no longer select a credential source.
 const LEGACY_ENV_ALIBABA_PROFILE_ID: &str = "alibaba-local-dev";
 const LEGACY_ENV_GEMINI_PROFILE_ID: &str = "gemini-local-dev";
@@ -805,8 +807,11 @@ impl SettingsStore {
     /// preserved and profile writes are blocked until it is repaired.
     pub fn load(app_config_dir: PathBuf, is_ui_test: bool, application_identifier: &str) -> Self {
         let is_development = application_identifier == DEVELOPMENT_APPLICATION_IDENTIFIER;
+        let is_persian = application_identifier == PERSIAN_APPLICATION_IDENTIFIER;
         let profile_keychain_service = if is_development {
             DEVELOPMENT_PROFILE_KEYCHAIN_SERVICE
+        } else if is_persian {
+            PERSIAN_PROFILE_KEYCHAIN_SERVICE
         } else {
             PROFILE_KEYCHAIN_SERVICE
         };
@@ -822,7 +827,7 @@ impl SettingsStore {
             Box::new(file_credentials::FileCredentialStore::for_app(
                 &app_config_dir,
                 profile_keychain_service,
-                !is_development,
+                !is_development && !is_persian,
             ));
         // One-time upgrade work. Each completed slot is persisted before the
         // next native read. Steady-state windows use only the local file.
@@ -11810,44 +11815,56 @@ mod tests {
     }
 
     #[test]
-    fn development_scope_does_not_read_or_migrate_release_credentials() {
-        let fake = FakeSecretStore::default();
-        fake.put(
-            PROFILE_KEYCHAIN_SERVICE,
-            &credential_account(&ServiceProfile::alibaba_default()),
-            "sk-release-profile",
-        );
-        fake.put(
-            LEGACY_KEYCHAIN_SERVICE_V3,
-            LEGACY_KEYCHAIN_ACCOUNT,
-            "sk-release-legacy",
-        );
-        let store = SettingsStore::in_memory_with_scope(
-            Box::new(fake.clone()),
-            false,
+    fn independent_scopes_do_not_read_or_migrate_release_credentials() {
+        for scope in [
             DEVELOPMENT_PROFILE_KEYCHAIN_SERVICE,
-        );
-
-        assert_eq!(store.load_api_key().unwrap(), None);
-        store
-            .save_api_key(DEFAULT_ALIBABA_PROFILE_ID, "sk-development")
-            .unwrap();
-        assert_eq!(
-            fake.value(
-                DEVELOPMENT_PROFILE_KEYCHAIN_SERVICE,
-                &credential_account(&ServiceProfile::alibaba_default())
-            )
-            .as_deref(),
-            Some("sk-development")
-        );
-        assert_eq!(
-            fake.value(
+            PERSIAN_PROFILE_KEYCHAIN_SERVICE,
+        ] {
+            let fake = FakeSecretStore::default();
+            fake.put(
                 PROFILE_KEYCHAIN_SERVICE,
-                &credential_account(&ServiceProfile::alibaba_default())
-            )
-            .as_deref(),
-            Some("sk-release-profile")
-        );
+                &credential_account(&ServiceProfile::alibaba_default()),
+                "sk-release-profile",
+            );
+            fake.put(
+                LEGACY_KEYCHAIN_SERVICE_V3,
+                LEGACY_KEYCHAIN_ACCOUNT,
+                "sk-release-legacy",
+            );
+            let store = SettingsStore::in_memory_with_scope(Box::new(fake.clone()), false, scope);
+
+            assert_eq!(store.load_api_key().unwrap(), None);
+            store
+                .save_api_key(DEFAULT_ALIBABA_PROFILE_ID, "sk-development")
+                .unwrap();
+            assert_eq!(
+                fake.value(
+                    scope,
+                    &credential_account(&ServiceProfile::alibaba_default())
+                )
+                .as_deref(),
+                Some("sk-development")
+            );
+            assert_eq!(
+                fake.value(
+                    PROFILE_KEYCHAIN_SERVICE,
+                    &credential_account(&ServiceProfile::alibaba_default())
+                )
+                .as_deref(),
+                Some("sk-release-profile")
+            );
+            assert_eq!(
+                fake.load_count(
+                    PROFILE_KEYCHAIN_SERVICE,
+                    &credential_account(&ServiceProfile::alibaba_default())
+                ),
+                0
+            );
+            assert_eq!(
+                fake.load_count(LEGACY_KEYCHAIN_SERVICE_V3, LEGACY_KEYCHAIN_ACCOUNT),
+                0
+            );
+        }
     }
 
     #[test]

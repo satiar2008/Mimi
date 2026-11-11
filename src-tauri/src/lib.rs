@@ -1082,6 +1082,7 @@ fn setup_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
         #[cfg(target_os = "macos")]
         show_in_dock,
     });
+    record_ui_test_native_menu(app);
 
     // Session broadcasts already cover every start/stop path (native menu,
     // settings, shortcut, recovery). Update the native action
@@ -1154,6 +1155,32 @@ pub(crate) fn refresh_native_tray_language(app: &tauri::AppHandle) {
         let _ = item.set_text(label);
         let _ = item.set_checked(mode == current_mode);
     }
+    record_ui_test_native_menu(app);
+}
+
+fn record_ui_test_native_menu(app: &tauri::AppHandle) {
+    if !commands::app_is_ui_test() {
+        return;
+    }
+    let Some(path) = std::env::var_os("MIMI_UI_TEST_NATIVE_MENU_FILE") else {
+        return;
+    };
+    let Some(items) = app.try_state::<NativeTrayMenuItems>() else {
+        return;
+    };
+    let snapshot = (|| -> tauri::Result<serde_json::Value> {
+        Ok(serde_json::json!({
+            "session": items.session_action.text()?,
+            "settings": items.settings.text()?,
+            "quit": items.quit.text()?,
+            "subtitleDisplay": items.subtitle_display.text()?,
+            "displayModes": items.display_modes.iter().map(|item| item.text())
+                .collect::<tauri::Result<Vec<_>>>()?,
+        }))
+    })();
+    if let Ok(snapshot) = snapshot {
+        let _ = std::fs::write(path, snapshot.to_string());
+    }
 }
 
 fn refresh_native_tray_session_action(app: &tauri::AppHandle, is_active: bool) {
@@ -1170,6 +1197,7 @@ fn refresh_native_tray_session_action(app: &tauri::AppHandle, is_active: bool) {
             .session_action
             .set_text(native_session_action_label(labels, is_active));
     }
+    record_ui_test_native_menu(app);
 }
 
 /// Registers the global session, Immersive Mode, and subtitle display shortcuts. Each action

@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   isWindowsUserAgent: vi.fn(),
   createTauriSoftwareUpdater: vi.fn(),
   getVersion: vi.fn(),
+  getIdentifier: vi.fn(),
 }));
 
 vi.mock("../../lib/ipc", () => ({
@@ -17,7 +18,7 @@ vi.mock("../../lib/ipc", () => ({
   appIsPortable: mocks.appIsPortable,
   appIsLinuxPackage: mocks.appIsLinuxPackage,
 }));
-vi.mock("@tauri-apps/api/app", () => ({ getVersion: mocks.getVersion }));
+vi.mock("@tauri-apps/api/app", () => ({ getVersion: mocks.getVersion, getIdentifier: mocks.getIdentifier }));
 vi.mock("./softwareUpdater", () => ({
   isWindowsUserAgent: mocks.isWindowsUserAgent,
   createTauriSoftwareUpdater: mocks.createTauriSoftwareUpdater,
@@ -28,11 +29,18 @@ beforeEach(() => {
   mocks.appIsUiTest.mockResolvedValue(false);
   mocks.appIsLinuxPackage.mockResolvedValue(false);
   mocks.getVersion.mockResolvedValue("1.4.2");
+  mocks.getIdentifier.mockResolvedValue("app.yuxino.mimi");
   mocks.isWindowsUserAgent.mockReturnValue(true);
   mocks.createTauriSoftwareUpdater.mockResolvedValue({ currentVersion: "1.4.2" });
 });
 
 describe("portable update distribution", () => {
+  it("keeps the Persian fork on manual updates without creating an updater", async () => {
+    mocks.getIdentifier.mockResolvedValue("app.satiar2008.mimi.fa");
+    expect(await createUpdaterForEnvironment()).toEqual({ kind: "manual", currentVersion: "1.4.2" });
+    expect(mocks.createTauriSoftwareUpdater).not.toHaveBeenCalled();
+    expect(mocks.appIsPortable).not.toHaveBeenCalled();
+  });
   it("routes a marked Windows ZIP to manual Releases updates", async () => {
     mocks.appIsPortable.mockResolvedValue(true);
     mocks.appIsUiTest.mockResolvedValue(true);
