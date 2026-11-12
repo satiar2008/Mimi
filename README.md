@@ -4,13 +4,13 @@
   <img src="src-tauri/icons/128x128@2x.png" width="96" alt="نشان میمی">
   <h1>Mimi فارسی</h1>
   <p>زیرنویس و ترجمهٔ زندهٔ صدای رایانه و میکروفون، با رابط فارسی و راست‌به‌چپ.</p>
-  <p><a href="https://github.com/satiar2008/Mimi/tree/feat/fa-ir-rtl"><strong>کد نسخهٔ فارسی</strong></a> · <a href="https://github.com/satiar2008/Mimi/blob/feat/fa-ir-rtl/docs/usage.fa-IR.md">راهنمای استفاده</a> · <a href="https://github.com/satiar2008/Mimi/issues">گزارش مشکل</a></p>
+  <p><a href="https://github.com/satiar2008/Mimi/releases/download/fa-v1.6.17-microphone.1/Mimi-fa-1.6.17-microphone-x64-setup.exe"><strong>دانلود نسخهٔ ویندوز</strong></a> · <a href="https://github.com/satiar2008/Mimi/tree/feat/fa-ir-rtl">کد نسخهٔ فارسی</a> · <a href="https://github.com/satiar2008/Mimi/blob/feat/fa-ir-rtl/docs/usage.fa-IR.md">راهنمای استفاده</a> · <a href="https://github.com/satiar2008/Mimi/issues">گزارش مشکل</a></p>
   <p><a href="README.md"><strong>فارسی</strong></a> · <a href="README_EN.md">انگلیسیِ پروژهٔ اصلی</a> · <a href="docs/readme/zh-CN.md">چینی ساده</a> · <a href="docs/readme/zh-TW.md">چینی سنتی</a> · <a href="docs/readme/ja.md">ژاپنی</a> · <a href="docs/readme/th.md">تایلندی</a> · <a href="docs/readme/ko.md">کره‌ای</a> · <a href="docs/readme/fr.md">فرانسوی</a> · <a href="docs/readme/de.md">آلمانی</a> · <a href="docs/readme/ru.md">روسی</a></p>
 </div>
 
 **Mimi نرم‌افزاری رایگان و متن‌باز و جایگزینی برای برنامه‌های اشتراکی زیرنویس زنده است.** استفاده از رابط و کد آن هزینهٔ اشتراک ندارد؛ هزینهٔ احتمالی سرویس تشخیص گفتار یا ترجمهٔ انتخابی، جداگانه محاسبه می‌شود.
 
-این مخزن فورک فارسیِ [پروژهٔ اصلی Mimi](https://github.com/yuxino/Mimi) است. کد فارسی‌سازی و قابلیت‌های تازه در شاخهٔ [`feat/fa-ir-rtl`](https://github.com/satiar2008/Mimi/tree/feat/fa-ir-rtl) نگه‌داری می‌شود. شاخهٔ پیش‌فرض `main` صفحهٔ معرفی فارسی را هم نمایش می‌دهد؛ برای اجرای قابلیت‌های معرفی‌شده، کد شاخهٔ فارسی را دریافت کنید.
+این مخزن فورک فارسیِ [پروژهٔ اصلی Mimi](https://github.com/yuxino/Mimi) است. کد فارسی‌سازی و قابلیت‌های تازه در شاخهٔ [`feat/fa-ir-rtl`](https://github.com/satiar2008/Mimi/tree/feat/fa-ir-rtl) نگه‌داری می‌شود. شاخهٔ پیش‌فرض `main` همین صفحهٔ معرفی فارسی را نمایش می‌دهد؛ برای اجرای برنامه، بستهٔ ویندوز زیر را نصب کنید یا کد شاخهٔ فارسی را بسازید.
 
 ## وضعیت نسخهٔ فارسی
 
@@ -18,8 +18,38 @@
 - زبان رابط `fa-IR`، راست‌به‌چپ و متن‌های ترکیبی فارسی و انگلیسی در سه پنجرهٔ دسکتاپ و منوی کنار ساعت پیاده‌سازی شده‌اند.
 - زبان‌های مستقل میکروفون و درج ترجمهٔ نهایی در محل تایپ به نسخهٔ ویندوز اضافه شده‌اند.
 - بستهٔ آزمایشی با شمارهٔ پایهٔ `1.6.17` ساخته و بررسی شده است؛ این شماره به معنی انتشار رسمی مستقلی از پروژهٔ اصلی نیست.
-- **هنوز بسته‌ای در [انتشارهای عمومی این فورک](https://github.com/satiar2008/Mimi/releases) بارگذاری نشده است.** تا زمان انتشار، می‌توانید [نسخهٔ فارسی را از کد بسازید](https://github.com/satiar2008/Mimi/blob/feat/fa-ir-rtl/docs/development/fa-IR.md).
+- **[نسخهٔ عمومیِ آزمایشیِ فورک فارسی منتشر شده است](https://github.com/satiar2008/Mimi/releases/tag/fa-v1.6.17-microphone.1)**؛ شناسهٔ انتشار `fa-v1.6.17-microphone.1` است.
 - بستهٔ ساخته‌شده امضای دیجیتال ندارد. [وضعیت آزمون‌ها و محدودیت‌ها](https://github.com/satiar2008/Mimi/blob/feat/fa-ir-rtl/docs/development/windows-verification.fa-IR.md) به‌صورت جداگانه ثبت شده است.
+
+## دریافت نسخهٔ ویندوز
+
+- [دانلود مستقیم فایل نصب ویندوز ۶۴ بیتی](https://github.com/satiar2008/Mimi/releases/download/fa-v1.6.17-microphone.1/Mimi-fa-1.6.17-microphone-x64-setup.exe)
+- [صفحهٔ انتشار و توضیحات کامل فارسی نسخه](https://github.com/satiar2008/Mimi/releases/tag/fa-v1.6.17-microphone.1)
+- [دریافت فایل هش SHA-256](https://github.com/satiar2008/Mimi/releases/download/fa-v1.6.17-microphone.1/Mimi-fa-1.6.17-microphone-x64-setup.sha256)
+- نام فایل: `Mimi-fa-1.6.17-microphone-x64-setup.exe`
+- اندازه: ۴٬۹۴۴٬۹۲۸ بایت؛ نیازمند ویندوز ۶۴ بیتی و WebView2.
+
+هش SHA-256 فایل نصب؛ پس از دانلود، مقدار محاسبه‌شدهٔ فایل باید دقیقاً با این مقدار برابر باشد:
+
+<div dir="ltr">
+
+```text
+8847cf57ba08e09df8948d8bbac89289db9848a6b38481bb2c38007daed3d2f3
+```
+
+</div>
+
+پیش از نصب، نسخهٔ در حال اجرای میمی را به‌صورت عادی ببندید. این بسته امضای دیجیتال ندارد و به‌عنوان انتشار آزمایشی ارائه شده است؛ فایل را از لینک همین فورک بگیرید. به‌روزرسانی خودکار از مخزن اصلی در پیکربندی فورک غیرفعال است.
+
+### توضیحات نسخهٔ منتشرشده
+
+- فارسی‌سازی رابط دسکتاپ، انتخاب زبان «فارسی»، چیدمان راست‌به‌چپ هر سه پنجره و منوی کنار ساعت.
+- مدیریت جهت متن‌های ترکیبی فارسی و انگلیسی، اعداد و مقدارهای فنی با حفظ تراز انتخابی زیرنویس.
+- انتخاب مستقل زبان گفتار و مقصد ترجمهٔ میکروفون؛ مقصد پیش‌فرض می‌تواند زبان مشخص‌شدهٔ گفتار دریافتی باشد. در حالت تشخیص خودکار زبان دریافتی، مقصد میکروفون را دستی انتخاب کنید.
+- درج دستی یک ترجمهٔ نهایی میکروفون در محل تایپ فعال ویندوز، با سه ثانیه فرصت انتخاب مقصد؛ بدون تغییر کلیپ‌بورد یا فشردن کلید ارسال و جابه‌جایی کادر.
+- جلوگیری از درج در کادر رمز، کادر فقط‌خواندنی و کنترل پشتیبانی‌نشده، و هماهنگی برچسب زبان و جهت متن در کنترل شناور.
+
+رابط بومی ویندوز و درج Unicode در ویرایشگر محلی بررسی شده‌اند. گفتار زنده با سرویس واقعی، کیفیت تشخیص فارسی و همهٔ ویرایشگرهای ویندوز در این پذیرش آزموده نشده‌اند. مسیر فعلی تشخیص گفتار Alibaba فارسی ندارد؛ برای گفتار فارسی میکروفون، سرویس و مدل سازگار لازم است. خواندن ترجمه با صدا، ورود پیوستهٔ خودکار و ترجمهٔ متن تایپ‌شده یا زیر ماوس در این نسخه ارائه نمی‌شوند. جزئیات در [گزارش پذیرش ویندوز](https://github.com/satiar2008/Mimi/blob/feat/fa-ir-rtl/docs/development/windows-verification.fa-IR.md) و [توضیحات فارسی انتشار](https://github.com/satiar2008/Mimi/releases/tag/fa-v1.6.17-microphone.1) آمده است.
 
 ![نمونهٔ رابط فارسی در شاخهٔ فارسی میمی](https://raw.githubusercontent.com/satiar2008/Mimi/refs/heads/feat/fa-ir-rtl/docs/assets/persian-desktop-settings.png)
 
@@ -42,7 +72,7 @@
 
 ## شروع سریع
 
-۱. [کد شاخهٔ فارسی را دریافت و نسخهٔ ویندوز را بسازید](https://github.com/satiar2008/Mimi/blob/feat/fa-ir-rtl/docs/development/fa-IR.md)، یا پس از انتشار عمومی، بستهٔ همان فورک را نصب کنید. بسته‌های پروژهٔ اصلی لزوماً قابلیت‌های این شاخه را ندارند.
+۱. [فایل نصب نسخهٔ فارسی ویندوز را دریافت کنید](https://github.com/satiar2008/Mimi/releases/download/fa-v1.6.17-microphone.1/Mimi-fa-1.6.17-microphone-x64-setup.exe)، هش آن را با مقدار بالا تطبیق دهید و نصب کنید. برای ساخت از کد، [راهنمای توسعهٔ شاخهٔ فارسی](https://github.com/satiar2008/Mimi/blob/feat/fa-ir-rtl/docs/development/fa-IR.md) را بخوانید. بسته‌های پروژهٔ اصلی لزوماً قابلیت‌های این شاخه را ندارند.
 
 ۲. در «تنظیمات ← عمومی»، زبان رابط را «فارسی» بگذارید. انتخاب زبان رابط، زبان تشخیص گفتار یا مقصد ترجمه را تغییر نمی‌دهد.
 
