@@ -275,6 +275,7 @@ struct Inner {
 /// content-free error before leaving this client.
 #[derive(Clone)]
 pub struct GeminiLiveClient {
+    model: String,
     network: super::provider_network::ProviderNetwork,
     inner: Arc<Inner>,
     endpoint: url::Url,
@@ -332,6 +333,16 @@ impl GeminiLiveClient {
         Ok(())
     }
 
+    pub fn with_model(mut self, model: Option<&str>) -> Result<Self, GeminiLiveClientError> {
+        if let Some(model) = model {
+            if !crate::clients::service_catalog::gemini_translation_model(model) {
+                return Err(GeminiLiveClientError::SessionSetupRejected);
+            }
+            self.model = model.to_owned();
+        }
+        Ok(self)
+    }
+
     pub fn new(
         api_key: &str,
         target_language: TargetLanguage,
@@ -357,6 +368,7 @@ impl GeminiLiveClient {
             return Err(GeminiLiveClientError::InvalidTargetLanguage);
         }
         Ok(Self {
+            model: GeminiLiveEndpoint::MODEL.to_owned(),
             network: super::provider_network::ProviderNetwork::default(),
             inner: Arc::new(Inner {
                 content_lock: Mutex::new(()),
@@ -441,7 +453,7 @@ impl GeminiLiveClient {
         }));
         *self.inner.receive_task.lock().await = Some(task);
 
-        let setup = GeminiLiveRequestEncoder::setup(self.target_language)
+        let setup = GeminiLiveRequestEncoder::setup_with_model(self.target_language, &self.model)
             .map_err(|_| GeminiLiveClientError::InvalidTargetLanguage)?;
         let complete_setup = async {
             self.send_text(setup.to_string())
@@ -932,7 +944,7 @@ async fn prepare_replacement(
         .await
         .map_err(connection_error)?;
     let (mut sink, mut stream) = socket.split();
-    let setup = GeminiLiveRequestEncoder::setup(client.target_language)
+    let setup = GeminiLiveRequestEncoder::setup_with_model(client.target_language, &client.model)
         .map_err(|_| GeminiLiveClientError::InvalidTargetLanguage)?;
     sink.send(Message::Text(setup.to_string().into()))
         .await

@@ -184,6 +184,7 @@ impl TranslationClient {
                     configuration.target_language,
                     events,
                 )
+                .and_then(|client| client.with_model(configuration.speech_model.as_deref()))
                 .map(Self::GeminiLive)
                 .map_err(TranslationClientError::Gemini);
             }

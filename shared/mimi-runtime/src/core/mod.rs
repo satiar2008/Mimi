@@ -21,3 +21,4 @@ pub mod session;
 pub mod session_archive;
 pub mod subtitle_reducer;
 pub mod transcript_progress;
+pub mod translation_output;

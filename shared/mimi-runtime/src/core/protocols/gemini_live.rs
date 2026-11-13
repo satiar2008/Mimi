@@ -53,10 +53,20 @@ pub struct GeminiLiveRequestEncoder;
 
 impl GeminiLiveRequestEncoder {
     pub fn setup(target_language: TargetLanguage) -> Result<Value, GeminiLiveProtocolError> {
+        Self::setup_with_model(target_language, GeminiLiveEndpoint::MODEL)
+    }
+
+    pub fn setup_with_model(
+        target_language: TargetLanguage,
+        model: &str,
+    ) -> Result<Value, GeminiLiveProtocolError> {
+        if !crate::clients::service_catalog::gemini_translation_model(model) {
+            return Err(GeminiLiveProtocolError::InvalidEndpoint);
+        }
         let target_language_code = target_language_code(target_language)?;
         Ok(json!({
             "setup": {
-                "model": format!("models/{}", GeminiLiveEndpoint::MODEL),
+                "model": format!("models/{model}"),
                 "inputAudioTranscription": {},
                 "outputAudioTranscription": {},
                 "generationConfig": {

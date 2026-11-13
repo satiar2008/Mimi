@@ -16,6 +16,7 @@ pub mod provider_events;
 pub mod provider_network;
 pub mod qwen_mt_client;
 pub mod recognition_client;
+pub mod service_catalog;
 pub mod tencent_cloud_client;
 pub mod translation_client;
 pub mod volcano_engine_client;

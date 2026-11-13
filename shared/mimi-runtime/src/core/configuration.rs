@@ -65,6 +65,8 @@ pub enum LiveTranslationConfigurationError {
 #[derive(Clone, PartialEq, Eq, serde::Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct LiveTranslationConfiguration {
+    #[serde(default)]
+    pub speech_model: Option<String>,
     pub provider: ProviderKind,
     pub qwen_mt_model: QwenMTModel,
     #[serde(default)]
@@ -128,7 +130,10 @@ impl LiveTranslationConfiguration {
             ProviderKind::GoogleGeminiLive if self.uses_realtime_asr() => {
                 crate::core::protocols::gemini_transcribe::MODEL
             }
-            ProviderKind::GoogleGeminiLive => GeminiLiveEndpoint::MODEL,
+            ProviderKind::GoogleGeminiLive => self
+                .speech_model
+                .as_deref()
+                .unwrap_or(GeminiLiveEndpoint::MODEL),
             ProviderKind::XAIRealtime if self.uses_xai_asr() => {
                 crate::core::protocols::xai_stt::MODEL
             }
@@ -228,6 +233,7 @@ impl LiveTranslationConfiguration {
             xai_speech_mode: Default::default(),
             speech_translation_mode: Default::default(),
             xai_text_model: crate::core::provider::default_xai_text_model(),
+            speech_model: None,
             credentials: ProviderCredentials::api_key(api_key),
             text_credentials: None,
             source_language,
@@ -253,6 +259,7 @@ impl LiveTranslationConfiguration {
             xai_speech_mode: Default::default(),
             speech_translation_mode: Default::default(),
             xai_text_model: crate::core::provider::default_xai_text_model(),
+            speech_model: None,
             credentials,
             text_credentials: None,
             source_language,
@@ -261,6 +268,11 @@ impl LiveTranslationConfiguration {
             network_proxy: ProxyConfig::default(),
             text_network_proxy: ProxyConfig::default(),
         }
+    }
+
+    pub fn with_speech_model(mut self, model: Option<String>) -> Self {
+        self.speech_model = model;
+        self
     }
 
     pub fn with_network_proxy(mut self, network_proxy: ProxyConfig) -> Self {
@@ -391,6 +403,14 @@ impl LiveTranslationConfiguration {
 
     /// Returns a trimmed, validated copy of the configuration.
     pub fn validated(&self) -> Result<Self, LiveTranslationConfigurationError> {
+        if let Some(model) = &self.speech_model {
+            if self.provider != ProviderKind::GoogleGeminiLive
+                || self.uses_realtime_asr()
+                || !crate::clients::service_catalog::gemini_translation_model(model)
+            {
+                return Err(LiveTranslationConfigurationError::UnsupportedSpeechTranslationMode);
+            }
+        }
         if self.speech_translation_mode != SpeechTranslationMode::Simultaneous
             && !self.provider.supports_speech_translation_mode()
         {
@@ -475,6 +495,7 @@ impl LiveTranslationConfiguration {
         }
 
         Ok(Self {
+            speech_model: self.speech_model.clone(),
             provider: self.provider,
             qwen_mt_model: self.qwen_mt_model,
             alibaba_realtime_mode: self.alibaba_realtime_mode,
@@ -495,6 +516,35 @@ impl LiveTranslationConfiguration {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn selected_gemini_model_survives_validation_and_protocol_encoding() {
+        use super::*;
+        let config = LiveTranslationConfiguration::with_credentials(
+            ProviderKind::GoogleGeminiLive,
+            ProviderCredentials::api_key("synthetic"),
+            SourceLanguage::Automatic,
+            TargetLanguage::English,
+            TranslationMode::Turbo,
+        )
+        .with_speech_model(Some("gemini-3.5-live-translate-preview".into()))
+        .validated()
+        .unwrap();
+        assert_eq!(config.model_names(), ["gemini-3.5-live-translate-preview"]);
+        let setup =
+            crate::core::protocols::gemini_live::GeminiLiveRequestEncoder::setup_with_model(
+                config.target_language,
+                config.speech_model.as_deref().unwrap(),
+            )
+            .unwrap();
+        assert_eq!(
+            setup["setup"]["model"],
+            "models/gemini-3.5-live-translate-preview"
+        );
+        assert!(config
+            .with_speech_model(Some("gemini-3.8-live".into()))
+            .validated()
+            .is_err());
+    }
     #[test]
     fn builtin_asr_modes_use_independent_keys_and_real_recognition_routes() {
         use super::*;
