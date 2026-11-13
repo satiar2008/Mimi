@@ -1,7 +1,9 @@
 //! Desktop output adapter: explicit global action, opt-in clipboard and bounded speech.
 use crate::{commands::AppState, session_manager::SessionManager, settings_store::SettingsStore};
 use mimi_runtime::{
-    clients::{provider_network::ProviderNetwork, service_catalog},
+    clients::{
+        eleven_realtime_speech, provider_network::ProviderNetwork, service_catalog, speech_stream,
+    },
     core::{
         credentials::ProviderCredentials,
         provider::ProviderKind,
@@ -344,7 +346,7 @@ pub async fn speech_output_preview(
     app: tauri::AppHandle,
     state: State<'_, AppState>,
     incoming: Option<bool>,
-) -> Result<(), String> {
+) -> Result<crate::streaming_playback::PlaybackMetrics, String> {
     if crate::commands::app_is_ui_test() {
         return Err("output_ui_test".into());
     }
@@ -366,18 +368,6 @@ pub async fn speech_output_preview(
         },
     )?;
     let revision = REVISION.load(Ordering::SeqCst);
-    let interrupted = async {
-        loop {
-            tokio::time::sleep(std::time::Duration::from_millis(50)).await;
-            if REVISION.load(Ordering::SeqCst) != revision || state.session.is_active() {
-                break;
-            }
-        }
-    };
-    let pcm = tokio::select! {
-        result = service_catalog::synthesize(&settings, &key, "سلام. این آزمایش خواندن ترجمهٔ زیرنویس است.", &network) => result?,
-        _ = interrupted => return Err("output_cancelled".into()),
-    };
     let cancelled = Arc::new(AtomicBool::new(false));
     let watch = cancelled.clone();
     let session = state.session.clone();
@@ -390,25 +380,118 @@ pub async fn speech_output_preview(
             }
         }
     });
-    let result = tokio::task::spawn_blocking(move || {
-        crate::speech_playback::play(
-            pcm,
-            &settings.device,
-            cancelled,
-            incoming && output.duck_system_audio,
-            output.original_volume as f32,
-        )
-    })
-    .await
-    .map_err(|_| "output_playback_failed".to_string())?;
+    let (tx, rx) = tokio::sync::mpsc::channel(1);
+    tx.send("سلام. این آزمایش خواندن تدریجی ترجمه است. صدا هم‌زمان با دریافت پخش می‌شود و منتظر پایان فایل نمی‌ماند.".into()).await.map_err(|_|"output_cancelled")?;
+    drop(tx);
+    let result = stream_reader(
+        app.clone(),
+        SpeechDestination {
+            speech: settings,
+            key,
+            network,
+        },
+        rx,
+        cancelled,
+        incoming && output.duck_system_audio,
+        output.original_volume as f32,
+        incoming,
+    )
+    .await;
     watcher.abort();
-    feedback(&app, result.clone());
+    feedback(&app, result.as_ref().map(|_| ()).map_err(Clone::clone));
     result
 }
 #[tauri::command]
 pub fn speech_output_cancel() {
     REVISION.fetch_add(1, Ordering::SeqCst);
     crate::microphone_input::cancel();
+}
+
+async fn stream_reader(
+    app: tauri::AppHandle,
+    destination: SpeechDestination,
+    mut phrases: tokio::sync::mpsc::Receiver<String>,
+    cancel: Arc<AtomicBool>,
+    duck: bool,
+    volume: f32,
+    incoming: bool,
+) -> Result<crate::streaming_playback::PlaybackMetrics, String> {
+    let started = std::time::Instant::now();
+    let (pcm_tx, pcm_rx) = tokio::sync::mpsc::channel(12);
+    let device = destination.speech.device.clone();
+    let playback_cancel = cancel.clone();
+    let (first_tx, first_rx) = tokio::sync::oneshot::channel();
+    let observer = app.clone();
+    tokio::spawn(async move {
+        if let Ok(ms) = first_rx.await {
+            let _ = observer.emit(
+                "speech-stream-started",
+                serde_json::json!({"incoming":incoming,"firstFrameMs":ms}),
+            );
+        }
+    });
+    let mut playback = tokio::task::spawn_blocking(move || {
+        crate::streaming_playback::play(
+            pcm_rx,
+            device,
+            playback_cancel,
+            duck,
+            volume,
+            started,
+            Some(first_tx),
+        )
+    });
+    let producer_cancel = cancel.clone();
+    let mut producer = tokio::spawn(async move {
+        if destination.speech.speech_provider == SpeechProvider::ElevenLabs {
+            return eleven_realtime_speech::speak(&destination.speech,&destination.key,&destination.network,phrases,&pcm_tx,&producer_cancel,|metrics|{
+                let _=app.emit("speech-stream-metrics",serde_json::json!({"incoming":incoming,"transport":"websocket","requestStartedMs":0,"firstChunkMs":metrics.first_chunk_ms,"lastChunkMs":metrics.last_chunk_ms,"networkChunks":metrics.network_chunks,"firstNetworkMs":metrics.first_network_ms,"lastNetworkMs":metrics.last_network_ms,"chunks":metrics.chunks,"bytes":metrics.bytes}));
+            }).await.map(|_|());
+        }
+        let mut previous = String::new();
+        while let Some(text) = phrases.recv().await {
+            if producer_cancel.load(Ordering::SeqCst) {
+                return Err("output_cancelled".to_owned());
+            }
+            let request_started = started.elapsed().as_millis() as u64;
+            let metrics = speech_stream::synthesize_stream(
+                &destination.speech,
+                &destination.key,
+                &text,
+                &previous,
+                &destination.network,
+                &pcm_tx,
+                &producer_cancel,
+            )
+            .await?;
+            // Timing and counts only: no text, voice identifiers or credentials.
+            let _=app.emit("speech-stream-metrics",serde_json::json!({"incoming":incoming,"requestStartedMs":request_started,"firstChunkMs":metrics.first_chunk_ms,"lastChunkMs":metrics.last_chunk_ms,"networkChunks":metrics.network_chunks,"firstNetworkMs":metrics.first_network_ms,"lastNetworkMs":metrics.last_network_ms,"chunks":metrics.chunks,"bytes":metrics.bytes}));
+            previous = text
+                .chars()
+                .rev()
+                .take(300)
+                .collect::<Vec<_>>()
+                .into_iter()
+                .rev()
+                .collect();
+        }
+        Ok::<(), String>(())
+    });
+    tokio::select! {
+        result=&mut producer=>{
+            let result=result.map_err(|_|"output_stream_failed".to_owned()).and_then(|v|v);
+            if result.is_err(){cancel.store(true,Ordering::SeqCst);}
+            let played=playback.await.map_err(|_|"output_playback_failed".to_owned())?;
+            result?;played
+        },
+        result=&mut playback=>{
+            let played=result.map_err(|_|"output_playback_failed".to_owned())?;
+            if played.is_err(){cancel.store(true,Ordering::SeqCst);producer.abort();return played;}
+            if cancel.load(Ordering::SeqCst){producer.abort();return Err("output_cancelled".into());}
+            producer.await.map_err(|_|"output_stream_failed".to_owned())??;
+            played
+        }
+    }
 }
 
 pub fn start(app: &tauri::AppHandle, session: Arc<SessionManager>, settings: Arc<SettingsStore>) {
@@ -421,12 +504,15 @@ pub fn start(app: &tauri::AppHandle, session: Arc<SessionManager>, settings: Arc
     let app = app.clone();
     tauri::async_runtime::spawn(async move {
         let mut cursor = mimi_runtime::core::translation_output::OutputCursor::default();
-        let mut pending = [
-            std::collections::VecDeque::new(),
-            std::collections::VecDeque::new(),
-        ];
-        type Running = Option<(tokio::task::JoinHandle<()>, Arc<AtomicBool>)>;
+        let mut speech_cursor = mimi_runtime::core::streaming_speech::SpeechCursor::default();
+        let clock = std::time::Instant::now();
+        type Running = Option<(
+            tokio::task::JoinHandle<()>,
+            Arc<AtomicBool>,
+            tokio::sync::mpsc::Sender<String>,
+        )>;
         let mut running: [Running; 2] = [None, None];
+        let mut blocked = [false; 2];
         let mut revision = REVISION.load(Ordering::SeqCst);
         let mut generation = session.output_generation();
         loop {
@@ -444,14 +530,12 @@ pub fn start(app: &tauri::AppHandle, session: Arc<SessionManager>, settings: Arc
                 || next_generation != generation
             {
                 for slot in &mut running {
-                    if let Some((task, cancel)) = slot.take() {
+                    if let Some((task, cancel, _)) = slot.take() {
                         cancel.store(true, Ordering::SeqCst);
                         task.abort();
                     }
                 }
-                for queue in &mut pending {
-                    queue.clear();
-                }
+                blocked = [false; 2];
             }
             revision = next_revision;
             generation = next_generation;
@@ -472,65 +556,93 @@ pub fn start(app: &tauri::AppHandle, session: Arc<SessionManager>, settings: Arc
                             .map_err(|_| "output_clipboard_failed".into()),
                     );
                 }
-                if (mic && output.speak_microphone) || (!mic && output.speak_system) {
-                    let queue = &mut pending[usize::from(mic)];
-                    if queue.len() < 4 {
-                        queue.push_back(final_output.text);
-                    } else {
-                        feedback(&app, Err("output_queue_full".into()));
-                    }
-                }
             }
             for lane in 0..2 {
-                if running[lane].as_ref().is_some_and(|(t, _)| t.is_finished()) {
+                if running[lane]
+                    .as_ref()
+                    .is_some_and(|(t, _, _)| t.is_finished())
+                {
                     running[lane] = None;
+                    blocked[lane] = true;
                 }
-                if running[lane].is_some() {
+            }
+            for phrase in speech_cursor.observe(
+                &event.subtitles,
+                generation,
+                clock.elapsed().as_millis() as u64,
+                [output.speak_system, output.speak_microphone],
+            ) {
+                let lane =
+                    usize::from(phrase.source == crate::core::audio_input::AudioSource::Microphone);
+                if blocked[lane] {
                     continue;
                 }
-                let Some(text) = pending[lane].pop_front() else {
-                    continue;
-                };
-                let SpeechDestination {
-                    speech,
-                    key,
-                    network,
-                } = match destination(
-                    &settings,
-                    if lane == 0 {
-                        output.incoming_speech()
-                    } else {
-                        output.microphone_speech()
-                    },
-                ) {
-                    Ok(d) => d,
-                    Err(error) => {
-                        feedback(&app, Err(error));
-                        continue;
-                    }
-                };
-                let handle = app.clone();
-                let cancelled = Arc::new(AtomicBool::new(false));
-                let cancel = cancelled.clone();
-                let duck = lane == 0 && output.duck_system_audio;
-                let volume = output.original_volume as f32;
-                let task = tokio::spawn(async move {
-                    let result = async {
-                        let pcm =
-                            service_catalog::synthesize(&speech, &key, &text, &network).await?;
-                        if cancel.load(Ordering::SeqCst) {
-                            return Ok(());
+                if running[lane].is_none() {
+                    let SpeechDestination {
+                        speech,
+                        key,
+                        network,
+                    } = match destination(
+                        &settings,
+                        if lane == 0 {
+                            output.incoming_speech()
+                        } else {
+                            output.microphone_speech()
+                        },
+                    ) {
+                        Ok(d) => d,
+                        Err(error) => {
+                            feedback(&app, Err(error));
+                            blocked[lane] = true;
+                            continue;
                         }
-                        tokio::task::spawn_blocking(move || {
-                            crate::speech_playback::play(pcm, &speech.device, cancel, duck, volume)
-                        })
-                        .await
-                        .map_err(|_| "output_playback_failed".to_string())?
+                    };
+                    let handle = app.clone();
+                    let cancelled = Arc::new(AtomicBool::new(false));
+                    let cancel = cancelled.clone();
+                    let duck = lane == 0 && output.duck_system_audio;
+                    let volume = output.original_volume as f32;
+                    let (tx, rx) = tokio::sync::mpsc::channel(8);
+                    let task = tokio::spawn(async move {
+                        let result = stream_reader(
+                            handle.clone(),
+                            SpeechDestination {
+                                speech,
+                                key,
+                                network,
+                            },
+                            rx,
+                            cancel.clone(),
+                            duck,
+                            volume,
+                            lane == 0,
+                        )
+                        .await;
+                        if let Err(error) = result {
+                            if error != "output_cancelled" {
+                                feedback(&handle, Err(error));
+                            }
+                        }
+                    });
+                    running[lane] = Some((task, cancelled, tx));
+                }
+                let preview = phrase.preview;
+                if running[lane]
+                    .as_ref()
+                    .is_some_and(|(_, _, tx)| tx.try_send(phrase.text).is_err())
+                {
+                    feedback(&app, Err("output_queue_full".into()));
+                    blocked[lane] = true;
+                    if let Some((task, cancel, _)) = running[lane].take() {
+                        cancel.store(true, Ordering::SeqCst);
+                        task.abort();
                     }
-                    .await;
-                    feedback(&handle, result);
-                });
-                running[lane] = Some((task, cancelled));
+                } else {
+                    let _ = app.emit(
+                        "speech-phrase-queued",
+                        serde_json::json!({"incoming":lane==0,"preview":preview}),
+                    );
+                }
             }
         }
     });

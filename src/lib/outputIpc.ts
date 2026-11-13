@@ -15,7 +15,8 @@ export const outputGet = () => invoke<OutputSnapshot>("translation_output_get");
 export const outputSave = (settings: TranslationOutput, apiKey?: string, deleteKey = false, incoming = false) => invoke<OutputSnapshot>("translation_output_save", { settings, apiKey: apiKey ?? null, deleteKey, incoming });
 export const outputDevices = () => invoke<{ id: string; name: string }[]>("speech_output_devices");
 export const outputCatalog = (voices: boolean, incoming = false) => invoke<CatalogItem[]>("speech_output_catalog", { voices, incoming });
-export const outputPreview = (incoming = false) => invoke<void>("speech_output_preview", { incoming });
+export interface SpeechPlaybackMetrics { firstFrameMs: number | null; underruns: number }
+export const outputPreview = (incoming = false) => invoke<SpeechPlaybackMetrics>("speech_output_preview", { incoming });
 export const outputCancel = () => invoke<void>("speech_output_cancel");
 export const microphoneCopy = () => invoke<void>("microphone_copy_translation");
 export interface VirtualMicrophoneState { installed: boolean; outputDeviceId: string | null; inputName: string | null }

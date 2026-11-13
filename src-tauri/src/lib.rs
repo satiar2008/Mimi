@@ -45,6 +45,7 @@ mod session_manager;
 mod settings_store;
 mod speech_ducking;
 mod speech_playback;
+mod streaming_playback;
 mod translation_output;
 mod updater_target;
 mod virtual_microphone;

@@ -17,7 +17,10 @@ pub fn gemini_translation_model(model: &str) -> bool {
     valid_id(model) && model.starts_with("gemini-") && model.contains("live-translate")
 }
 
-fn client(network: &ProviderNetwork, endpoint: &url::Url) -> Result<reqwest::Client, String> {
+pub(super) fn client(
+    network: &ProviderNetwork,
+    endpoint: &url::Url,
+) -> Result<reqwest::Client, String> {
     let _ = rustls::crypto::ring::default_provider().install_default();
     network
         .http_client_builder(endpoint)
@@ -312,7 +315,10 @@ pub async fn synthesize(
     Ok(pcm)
 }
 
-fn gemini_speech_payload(settings: &SpeechSettings, text: &str) -> Result<Value, String> {
+pub(super) fn gemini_speech_payload(
+    settings: &SpeechSettings,
+    text: &str,
+) -> Result<Value, String> {
     // Model IDs are path components, never a provider-controlled URL.
     if !settings.model.starts_with("gemini-")
         || !settings.model.contains("tts")
@@ -327,7 +333,7 @@ fn gemini_speech_payload(settings: &SpeechSettings, text: &str) -> Result<Value,
     }
     Ok(json!({"contents":[{"role":"user","parts":[{"text":text}]}],"generationConfig":config}))
 }
-fn gemini_pcm(value: &Value) -> Result<Vec<u8>, String> {
+pub(super) fn gemini_pcm(value: &Value) -> Result<Vec<u8>, String> {
     use base64::Engine as _;
     let parts = value
         .pointer("/candidates/0/content/parts")
