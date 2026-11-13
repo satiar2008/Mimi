@@ -110,9 +110,26 @@ impl TranslationOutput {
     }
 }
 impl SpeechSettings {
+    /// v4 ignores provider speed; apply it locally without changing the voice/model.
+    pub fn local_speed(&self) -> f64 {
+        if self.speech_provider == SpeechProvider::ElevenLabs && self.model.starts_with("eleven_v4")
+        {
+            self.speed
+        } else {
+            1.0
+        }
+    }
+    pub fn maximum_speed(&self) -> f64 {
+        if self.speech_provider == SpeechProvider::ElevenLabs && self.model.starts_with("eleven_v4")
+        {
+            1.6
+        } else {
+            1.2
+        }
+    }
     pub fn validate(&self, enabled: bool) -> Result<(), String> {
         if self.device.len() > 1024
-            || !(0.7..=1.2).contains(&self.speed)
+            || !(0.7..=self.maximum_speed()).contains(&self.speed)
             || !(0.0..=1.0).contains(&self.stability)
             || !(0.0..=1.0).contains(&self.similarity)
         {

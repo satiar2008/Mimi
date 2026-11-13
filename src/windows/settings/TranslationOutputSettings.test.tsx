@@ -18,6 +18,15 @@ beforeEach(() => {
 });
 afterEach(async () => { await act(() => root.unmount()); host.remove(); useStore.setState(initial, true); setStoredUiLanguage("system"); vi.unstubAllGlobals(); });
 const render = () => act(async () => root.render(<TranslationOutputSettings />));
+it("offers effective local speed for v4 on each reader path without changing the model", async () => {
+  native.get.mockResolvedValue({ settings: { ...settings, model: "eleven_v4", systemSpeech: { ...settings, model: "eleven_v4", speed: 1.2 } }, keyPresent: true });
+  await render();
+  const speed = () => host.querySelector<HTMLInputElement>('input[aria-label="سرعت خواندن"]')!;
+  expect(speed().max).toBe("1.6");
+  expect(speed().value).toBe("1.2");
+  expect(host.textContent).toContain(outputCopy().localSpeedHelp);
+  expect(native.save).not.toHaveBeenCalled();
+});
 function button(text: string) { return [...host.querySelectorAll<HTMLButtonElement>("button")].find(b => b.textContent === text)!; }
 it("loads output choices without enabling microphone capture, speech or clipboard", async () => {
   await render();

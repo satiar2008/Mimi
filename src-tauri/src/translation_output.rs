@@ -417,7 +417,44 @@ async fn stream_reader(
     incoming: bool,
 ) -> Result<crate::streaming_playback::PlaybackMetrics, String> {
     let started = std::time::Instant::now();
-    let (pcm_tx, pcm_rx) = tokio::sync::mpsc::channel(12);
+    let (pcm_tx, mut raw_rx) = tokio::sync::mpsc::channel::<Vec<u8>>(12);
+    let (tempo_tx, pcm_rx) = tokio::sync::mpsc::channel(12);
+    let tempo_cancel = cancel.clone();
+    let tempo_app = app.clone();
+    let local_speed = destination.speech.local_speed();
+    let tempo = tokio::spawn(async move {
+        let mut processor = mimi_runtime::audio::speech_tempo::SpeechTempo::new(local_speed)?;
+        let mut received = 0usize;
+        let mut emitted = 0usize;
+        let mut reported = std::time::Instant::now();
+        loop {
+            let packet = tokio::select! {
+                packet=raw_rx.recv()=>packet,
+                _=async { while !tempo_cancel.load(Ordering::SeqCst) { tokio::time::sleep(std::time::Duration::from_millis(20)).await; } }=>return Err("output_cancelled"),
+            };
+            let finished = packet.is_none();
+            let output = if let Some(packet) = packet {
+                received += packet.len() / 2;
+                processor.push(&packet)?
+            } else {
+                processor.finish()
+            };
+            for packet in output {
+                emitted += packet.len() / 2;
+                tokio::select! {
+                    result=tempo_tx.send(packet)=>result.map_err(|_|"output_cancelled")?,
+                    _=async { while !tempo_cancel.load(Ordering::SeqCst) { tokio::time::sleep(std::time::Duration::from_millis(20)).await; } }=>return Err("output_cancelled"),
+                }
+            }
+            if finished || reported.elapsed() >= std::time::Duration::from_secs(1) {
+                let _=tempo_app.emit("speech-stream-tempo",serde_json::json!({"incoming":incoming,"localSpeed":local_speed,"inputSamples":received,"outputSamples":emitted,"finished":finished}));
+                reported = std::time::Instant::now();
+            }
+            if finished {
+                return Ok(());
+            }
+        }
+    });
     let device = destination.speech.device.clone();
     let playback_cancel = cancel.clone();
     let (first_tx, first_rx) = tokio::sync::oneshot::channel();
@@ -443,6 +480,7 @@ async fn stream_reader(
     });
     let producer_cancel = cancel.clone();
     let mut producer = tokio::spawn(async move {
+        let synthesized = async {
         if destination.speech.speech_provider == SpeechProvider::ElevenLabs {
             return eleven_realtime_speech::speak(&destination.speech,&destination.key,&destination.network,phrases,&pcm_tx,&producer_cancel,|metrics|{
                 let _=app.emit("speech-stream-metrics",serde_json::json!({"incoming":incoming,"transport":"websocket","requestStartedMs":0,"firstChunkMs":metrics.first_chunk_ms,"lastChunkMs":metrics.last_chunk_ms,"networkChunks":metrics.network_chunks,"firstNetworkMs":metrics.first_network_ms,"lastNetworkMs":metrics.last_network_ms,"chunks":metrics.chunks,"bytes":metrics.bytes}));
@@ -476,6 +514,16 @@ async fn stream_reader(
                 .collect();
         }
         Ok::<(), String>(())
+        }.await;
+        if synthesized.is_err() {
+            producer_cancel.store(true, Ordering::SeqCst);
+        }
+        drop(pcm_tx);
+        let adjusted = tempo
+            .await
+            .map_err(|_| "output_playback_failed".to_owned())?;
+        synthesized?;
+        adjusted.map_err(str::to_owned)
     });
     tokio::select! {
         result=&mut producer=>{

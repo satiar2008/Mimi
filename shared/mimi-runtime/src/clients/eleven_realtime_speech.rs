@@ -41,7 +41,10 @@ fn setup(settings: &SpeechSettings) -> Result<(String, Value), String> {
     url.query_pairs_mut()
         .append_pair("model_id", &settings.model)
         .append_pair("output_format", "pcm_24000");
-    let voice = json!({"stability":settings.stability,"similarity_boost":settings.similarity,"speed":settings.speed});
+    let mut voice = json!({"stability":settings.stability,"similarity_boost":settings.similarity,"speed":settings.speed});
+    if settings.model.starts_with("eleven_v4") {
+        voice.as_object_mut().unwrap().remove("speed");
+    }
     let initial = if ttd {
         json!({"voices":[settings.voice],"voice_settings":voice})
     } else {
@@ -102,13 +105,10 @@ pub async fn speak(
     )
     .await?;
     let mut closing = false;
-    let mut unflushed = false;
     let mut metrics = StreamMetrics::default();
     let mut last_progress = Instant::now();
     let mut keep_alive = tokio::time::interval(Duration::from_secs(10));
-    let mut flush = tokio::time::interval(Duration::from_millis(350));
     keep_alive.tick().await;
-    flush.tick().await;
     loop {
         tokio::select! {
             _=cancelled(cancel)=>{let _=tokio::time::timeout(Duration::from_millis(250),socket.close(None)).await;return Err("output_cancelled".into());},
@@ -139,13 +139,14 @@ pub async fn speak(
             next=text.recv(),if !closing=>{
                 if let Some(next)=next {
                     if next.is_empty()||next.chars().count()>4000{return Err("output_invalid_text".into());}
-                    send_frame(&mut socket,Message::Text(text_frame(settings,&next).to_string().into()),cancel).await?;unflushed=true;
+                    send_frame(&mut socket,Message::Text(text_frame(settings,&next).to_string().into()),cancel).await?;
+                    // Each input is a sentence or a bounded long-sentence fallback.
+                    send_frame(&mut socket,Message::Text(json!({"flush":true}).to_string().into()),cancel).await?;
                 }else{
                     let close=if dialogue(&settings.model){json!({"close_socket":true})}else{json!({"text":""})};
-                    send_frame(&mut socket,Message::Text(close.to_string().into()),cancel).await?;closing=true;unflushed=false;
+                    send_frame(&mut socket,Message::Text(close.to_string().into()),cancel).await?;closing=true;
                 }
             },
-            _=flush.tick(),if unflushed&&!closing=>{send_frame(&mut socket,Message::Text(json!({"flush":true}).to_string().into()),cancel).await?;unflushed=false;},
             _=keep_alive.tick(),if !closing=>{
                 let keep=if dialogue(&settings.model){json!({"keep_alive":true})}else{json!({"text":" "})};
                 send_frame(&mut socket,Message::Text(keep.to_string().into()),cancel).await?;
@@ -191,10 +192,19 @@ mod tests {
             "سلام Mimi "
         );
         assert!(!initial.to_string().contains("key"));
+        settings.model = "eleven_v4".into();
+        settings.speed = 1.4;
+        let (url, initial) = setup(&settings).unwrap();
+        assert!(url.contains("model_id=eleven_v4"));
+        assert!(initial["voice_settings"].get("speed").is_none());
+        assert_eq!(settings.local_speed(), 1.4);
         settings.model = "eleven_flash_v2_5".into();
+        settings.speed = 1.2;
         let (url, initial) = setup(&settings).unwrap();
         assert!(url.contains("/text-to-speech/voice-a/stream-input?"));
         assert_eq!(initial["text"], " ");
+        assert_eq!(initial["voice_settings"]["speed"], 1.2);
+        assert_eq!(settings.local_speed(), 1.0);
     }
     #[test]
     fn only_bounded_pcm_is_forwarded_and_provider_error_text_is_private() {

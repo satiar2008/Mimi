@@ -162,35 +162,28 @@ impl Entry {
                 .last()
                 .map_or(0, |((index, c), _)| index + c.len_utf8())
         };
-        let mut end = stable;
-        if !final_text {
-            // Keep the newest two words replaceable, and never send a half word.
-            let starts: Vec<usize> = text
+        // A stable prefix can end inside a growing decimal, URL or word.
+        let end = if stable < text.len()
+            && text[stable..]
+                .chars()
+                .next()
+                .is_some_and(|c| !c.is_whitespace())
+        {
+            text[..stable]
                 .char_indices()
-                .filter_map(|(i, c)| {
-                    (!c.is_whitespace()
-                        && (i == 0
-                            || text[..i]
-                                .chars()
-                                .next_back()
-                                .is_some_and(char::is_whitespace)))
-                    .then_some(i)
-                })
-                .collect();
-            if starts.len() > 2 {
-                end = end.min(starts[starts.len() - 2]);
-            } else {
-                end = 0;
-            }
-            end = text[..end]
-                .char_indices()
-                .rfind(|(_, c)| c.is_whitespace() || punctuation(*c))
-                .map_or(0, |(i, c)| i + c.len_utf8());
-        }
+                .rfind(|(_, c)| c.is_whitespace())
+                .map_or(0, |(i, c)| i + c.len_utf8())
+        } else {
+            stable
+        };
         let mut result = Vec::new();
         while self.committed.len() < end && result.len() < 8 {
             let rest = &text[self.committed.len()..end];
-            let Some(length) = phrase_end(rest, final_text) else {
+            let Some(length) = (if final_text && result.len() >= 6 {
+                Some(rest.char_indices().nth(4000).map_or(rest.len(), |(i, _)| i))
+            } else {
+                phrase_end(rest, final_text)
+            }) else {
                 break;
             };
             let phrase = rest[..length].trim();
@@ -205,65 +198,82 @@ impl Entry {
         result
     }
 }
-fn punctuation(c: char) -> bool {
-    matches!(
-        c,
-        '.' | '!' | '?' | '؟' | '،' | ',' | ';' | '؛' | '。' | '！' | '？' | ':'
-    )
+/// Only sentence endings trigger synthesis. Commas/colons keep their prosody.
+fn sentence_end(text: &str) -> Option<usize> {
+    for (i, c) in text.char_indices() {
+        if !matches!(c, '.' | '!' | '?' | '؟' | '。' | '！' | '？') {
+            continue;
+        }
+        let after = i + c.len_utf8();
+        if c == '.' {
+            let token = text[..i]
+                .split_whitespace()
+                .next_back()
+                .unwrap_or("")
+                .to_lowercase();
+            if matches!(
+                token.as_str(),
+                "mr" | "mrs"
+                    | "ms"
+                    | "dr"
+                    | "prof"
+                    | "sr"
+                    | "jr"
+                    | "st"
+                    | "vs"
+                    | "etc"
+                    | "e.g"
+                    | "i.e"
+            ) || (token.chars().count() == 1 && token.chars().all(char::is_alphabetic))
+                || token.contains('.')
+                    && token.split('.').all(|part| {
+                        part.chars().count() == 1 && part.chars().all(char::is_alphabetic)
+                    })
+            {
+                continue;
+            }
+        }
+        let mut end = after;
+        for (offset, ch) in text[after..].char_indices() {
+            if matches!(
+                ch,
+                '!' | '?' | '؟' | '.' | '！' | '？' | '”' | '’' | '"' | ')' | ']' | '»'
+            ) {
+                end = after + offset + ch.len_utf8();
+            } else {
+                break;
+            }
+        }
+        if text[end..].chars().next().is_none_or(char::is_whitespace) {
+            return Some(end);
+        }
+    }
+    None
 }
 fn phrase_end(text: &str, final_text: bool) -> Option<usize> {
+    let limit = text.char_indices().nth(4000).map_or(text.len(), |(i, _)| i);
+    if let Some(end) = sentence_end(&text[..limit]) {
+        return Some(end);
+    }
     if final_text {
-        if text.chars().count() <= 4000 {
-            return Some(text.len());
-        }
-        return text
-            .char_indices()
-            .take(4000)
-            .filter(|(_, c)| c.is_whitespace())
-            .last()
-            .map(|(i, c)| i + c.len_utf8());
+        return Some(limit);
     }
-    let mut words = 0;
-    let mut inside = false;
-    let mut boundary = None;
-    for (count, (i, c)) in text.char_indices().enumerate() {
-        if c.is_whitespace() {
-            if inside {
-                words += 1;
-                inside = false;
-            }
-            boundary = Some(i + c.len_utf8());
-            if words >= 8 {
-                return boundary;
-            }
-        } else {
-            inside = true;
-        }
-        if punctuation(c)
-            && count >= 6
-            && text[i + c.len_utf8()..]
-                .chars()
-                .next()
-                .is_none_or(char::is_whitespace)
-        {
-            return Some(i + c.len_utf8());
-        }
-        if count >= 180 {
-            return boundary;
-        }
+    // Bounded fallback for continuous speech without punctuation; never 4-8 words.
+    if text.chars().count() < 320 && text.split_whitespace().count() < 48 {
+        return None;
     }
-    if words >= 4 {
-        boundary
-    } else {
-        None
-    }
+    text.char_indices()
+        .take(320)
+        .filter(|(_, c)| c.is_whitespace())
+        .last()
+        .map(|(i, c)| i + c.len_utf8())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     fn snapshot(final_text: bool, id: Option<&str>) -> SubtitleSnapshot {
-        serde_json::from_value(serde_json::json!({"tracks":[{"audioSource":"system","source":{"text":"source","isFinal":false},"translation":{"text":"","isFinal":false},"history":[],"previewPair":null,"displayPair":{"source":"source","translation":"Hello Mimi this is a streaming translation test for today","utteranceId":id},"displayPairFinal":final_text,"displayPairCreatedAt":10,"detectedLanguage":null,"isTranslationPending":false,"isTranslationPreviewPending":false,"isTranslationTimedOut":false,"translationRecovery":null}],"source":{"text":"","isFinal":false},"translation":{"text":"","isFinal":false},"history":[],"previewPair":null})).unwrap()
+        serde_json::from_value(serde_json::json!({"tracks":[{"audioSource":"system","source":{"text":"source","isFinal":false},"translation":{"text":"","isFinal":false},"history":[],"previewPair":null,"displayPair":{"source":"source","translation":"Hello Mimi this is a streaming translation test. More words for today","utteranceId":id},"displayPairFinal":final_text,"displayPairCreatedAt":10,"detectedLanguage":null,"isTranslationPending":false,"isTranslationPreviewPending":false,"isTranslationTimedOut":false,"translationRecovery":null}],"source":{"text":"","isFinal":false},"translation":{"text":"","isFinal":false},"history":[],"previewPair":null})).unwrap()
     }
     #[test]
     fn two_input_lanes_commit_early_and_do_not_repeat_their_finals_after_resume() {
@@ -300,7 +310,7 @@ mod tests {
     #[test]
     fn continuous_growth_speaks_before_final_and_final_does_not_replay() {
         let mut entry = Entry::default();
-        let first = "سلام این یک آزمایش ترجمه زنده برای جلسه امروز است";
+        let first = "سلام این یک آزمایش ترجمه زنده برای جلسه امروز است.";
         assert!(entry.accept(first, false, 0).is_empty());
         let chunks = entry.accept(&format!("{first} و صحبت ادامه دارد"), false, 400);
         assert!(!chunks.is_empty());
@@ -316,7 +326,7 @@ mod tests {
     #[test]
     fn rewritten_unspoken_tail_is_read_but_spoken_prefix_is_not_repeated() {
         let mut entry = Entry::default();
-        let text = "Hello Mimi this is a live translation test for today";
+        let text = "Hello Mimi this is a live translation test. For today";
         entry.accept(text, false, 0);
         assert!(!entry.accept(text, false, 400).is_empty());
         assert!(!entry
@@ -330,11 +340,47 @@ mod tests {
             .is_empty());
     }
     #[test]
+    fn waits_for_sentences_and_preserves_numbers_abbreviations_and_quotes() {
+        let mut entry = Entry::default();
+        let text = "Dr. Smith paid 3.14 for example.com، امروز ساعت ۱۲:۳۰ است. «جملهٔ دوم؟» ادامه";
+        assert!(entry.accept(text, false, 0).is_empty());
+        let parts = entry.accept(text, false, 400);
+        assert_eq!(
+            parts,
+            [
+                "Dr. Smith paid 3.14 for example.com، امروز ساعت ۱۲:۳۰ است.",
+                "«جملهٔ دوم؟»"
+            ]
+        );
+        assert_eq!(entry.accept(text, true, 450), ["ادامه"]);
+        let mut entry = Entry::default();
+        let text = "سلام امروز می‌خواهیم ترجمهٔ زنده را آزمایش کنیم و سپس ادامه دهیم";
+        entry.accept(text, false, 0);
+        assert!(entry.accept(text, false, 500).is_empty());
+        assert_eq!(entry.accept(text, true, 600), [text]);
+        let mut entry = Entry::default();
+        let long = "گفتار بدون نشانه ادامه دارد ".repeat(20);
+        entry.accept(&long, false, 0);
+        let chunks = entry.accept(&long, false, 500);
+        assert!(!chunks.is_empty());
+        assert!(chunks
+            .iter()
+            .all(|v| v.chars().count() <= 320 && v.split_whitespace().count() > 8));
+    }
+    #[test]
     fn unicode_and_long_finals_remain_bounded_without_breaking_utf8() {
         let mut entry = Entry::default();
         let chunks = entry.accept(&"سلام Mimi 👋 جلسهٔ ۱۲:۳۰ ادامه دارد. ".repeat(30), true, 0);
         assert!(!chunks.is_empty() && chunks.len() <= 8);
         assert!(chunks.iter().all(|v| v.chars().count() <= 4000));
+        for text in [
+            "x".repeat(4096),
+            format!("{}{}", "A! ".repeat(7), "ی".repeat(4075)),
+        ] {
+            let chunks = Entry::default().accept(&text, true, 0);
+            assert!(chunks.len() <= 8 && chunks.iter().all(|v| v.chars().count() <= 4000));
+            assert_eq!(chunks.concat().replace(' ', ""), text.replace(' ', ""));
+        }
         assert!(Entry::default()
             .accept(&"x".repeat(4097), false, 0)
             .is_empty());

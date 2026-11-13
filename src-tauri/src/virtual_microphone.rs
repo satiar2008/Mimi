@@ -491,9 +491,13 @@ mod platform {
             assert_eq!(config.sample_format(), cpal::SampleFormat::F32);
             let frames = Arc::new(AtomicU32::new(0));
             let peak = Arc::new(AtomicU32::new(0));
+            let crossings = Arc::new(AtomicU32::new(0));
             let failed = Arc::new(AtomicBool::new(false));
             let count = frames.clone();
             let max = peak.clone();
+            let rises = crossings.clone();
+            let channels = config.channels() as usize;
+            let mut previous = 0.0f32;
             let error = failed.clone();
             let stream = input
                 .build_input_stream::<f32, _, _>(
@@ -502,6 +506,12 @@ mod platform {
                         count.fetch_add(data.len() as u32, Ordering::SeqCst);
                         let value = data.iter().fold(0.0f32, |a, b| a.max(b.abs()));
                         max.fetch_max(value.to_bits(), Ordering::SeqCst);
+                        for frame in data.chunks(channels) {
+                            if previous <= 0.0 && frame[0] > 0.0 {
+                                rises.fetch_add(1, Ordering::SeqCst);
+                            }
+                            previous = frame[0];
+                        }
                     },
                     move |_| {
                         error.store(true, Ordering::SeqCst);
@@ -531,11 +541,16 @@ mod platform {
             assert!(!failed.load(Ordering::SeqCst));
             assert!(frames.load(Ordering::SeqCst) > 24000);
             assert!(
-                (0.05..0.2).contains(&received),
-                "Expected owned 10% tone, peak={received}"
+                (0.001..0.2).contains(&received),
+                "Expected owned tone at the user's endpoint volume, peak={received}"
+            );
+            let cycles = crossings.load(Ordering::SeqCst);
+            assert!(
+                (400..480).contains(&cycles),
+                "Expected one second of 440 Hz, cycles={cycles}"
             );
             println!(
-                "virtual_pair=true physical_microphone=false samples={} peak={received}",
+                "virtual_pair=true physical_microphone=false samples={} peak={received} cycles={cycles}",
                 frames.load(Ordering::SeqCst)
             );
         }

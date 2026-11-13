@@ -2,3 +2,4 @@
 
 pub mod send_pipeline;
 pub mod speech_pcm;
+pub mod speech_tempo;
