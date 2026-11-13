@@ -43,9 +43,11 @@ mod session_export;
 mod session_history;
 mod session_manager;
 mod settings_store;
+mod speech_ducking;
 mod speech_playback;
 mod translation_output;
 mod updater_target;
+mod virtual_microphone;
 mod windows;
 #[cfg(target_os = "windows")]
 mod windows_startup;
@@ -462,6 +464,10 @@ pub fn run() {
             translation_output::speech_output_catalog,
             translation_output::speech_output_preview,
             translation_output::speech_output_cancel,
+            virtual_microphone::virtual_microphone_state,
+            virtual_microphone::virtual_microphone_prepare,
+            virtual_microphone::virtual_microphone_install,
+            virtual_microphone::virtual_microphone_use,
             provider_models::provider_models_get,
             provider_models::provider_model_save,
             commands::microphone_cancel_insertion,
@@ -514,6 +520,10 @@ pub fn run() {
         .build(context)
         .expect("error while building tauri application")
         .run(|app, event| {
+            if matches!(event, tauri::RunEvent::Exit) {
+                speech_playback::shutdown();
+                virtual_microphone::shutdown();
+            }
             #[cfg(target_os = "macos")]
             if matches!(event, tauri::RunEvent::Exit) {
                 mac_native_quit::remove();

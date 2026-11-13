@@ -1,9 +1,26 @@
 //! Only synthesized PCM is routed here; raw microphone audio never enters this module.
 use serde::Serialize;
 use std::sync::{
-    atomic::{AtomicBool, Ordering},
+    atomic::{AtomicBool, AtomicUsize, Ordering},
     Arc,
 };
+static SHUTTING_DOWN: AtomicBool = AtomicBool::new(false);
+static ACTIVE: AtomicUsize = AtomicUsize::new(0);
+#[cfg(target_os = "windows")]
+struct PlaybackOwner;
+#[cfg(target_os = "windows")]
+impl Drop for PlaybackOwner {
+    fn drop(&mut self) {
+        ACTIVE.fetch_sub(1, Ordering::SeqCst);
+    }
+}
+pub fn shutdown() {
+    SHUTTING_DOWN.store(true, Ordering::SeqCst);
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(1);
+    while ACTIVE.load(Ordering::SeqCst) > 0 && std::time::Instant::now() < deadline {
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+}
 
 #[derive(Serialize)]
 pub struct OutputDevice {
@@ -31,8 +48,41 @@ pub fn devices() -> Result<Vec<OutputDevice>, String> {
 }
 
 #[cfg(target_os = "windows")]
-pub fn play(pcm: Vec<u8>, device_id: &str, cancelled: Arc<AtomicBool>) -> Result<(), String> {
+pub fn play(
+    pcm: Vec<u8>,
+    device_id: &str,
+    cancelled: Arc<AtomicBool>,
+    duck: bool,
+    volume: f32,
+) -> Result<(), String> {
+    let device = device_id.to_owned();
+    // CPAL initializes an STA on first use. Volume-session enumeration needs an
+    // MTA owner; a reused Tokio blocking worker may already belong to an STA.
+    // Own both operations on one fresh MTA thread, including native destruction.
+    std::thread::Builder::new()
+        .name("mimi-speech-output".into())
+        .spawn(move || {
+            crate::audio::windows::with_com(|| play_inner(pcm, &device, cancelled, duck, volume))
+        })
+        .map_err(|_| "output_playback_failed".to_string())?
+        .join()
+        .map_err(|_| "output_playback_failed".to_string())?
+}
+
+#[cfg(target_os = "windows")]
+fn play_inner(
+    pcm: Vec<u8>,
+    device_id: &str,
+    cancelled: Arc<AtomicBool>,
+    duck: bool,
+    volume: f32,
+) -> Result<(), String> {
     use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+    ACTIVE.fetch_add(1, Ordering::SeqCst);
+    let _owner = PlaybackOwner;
+    if SHUTTING_DOWN.load(Ordering::SeqCst) {
+        return Err("output_cancelled".into());
+    }
     let host = cpal::default_host();
     let device = host
         .output_devices()
@@ -87,11 +137,20 @@ pub fn play(pcm: Vec<u8>, device_id: &str, cancelled: Arc<AtomicBool>) -> Result
         ),
         _ => return Err("output_device_unsupported".into()),
     }?;
-    stream.play().map_err(|_| "output_playback_failed")?;
+    if cancelled.load(Ordering::SeqCst) {
+        return Ok(());
+    }
+    let _ducking = if duck {
+        Some(crate::speech_ducking::Ducking::begin(volume)?)
+    } else {
+        None
+    };
+    stream.play().map_err(playback_error)?;
     let started = std::time::Instant::now();
     while !done.load(Ordering::SeqCst)
         && !failed.load(Ordering::SeqCst)
         && !cancelled.load(Ordering::SeqCst)
+        && !SHUTTING_DOWN.load(Ordering::SeqCst)
     {
         if started.elapsed() > std::time::Duration::from_secs(65) {
             return Err("output_playback_timeout".into());
@@ -149,9 +208,38 @@ fn build<T: cpal::SizedSample + cpal::FromSample<f32>>(
             },
             None,
         )
-        .map_err(|_| "output_playback_failed".into())
+        .map_err(playback_error)
+}
+#[cfg(target_os = "windows")]
+fn playback_error(error: cpal::Error) -> String {
+    #[cfg(test)]
+    eprintln!("native speech stream: {error}");
+    match error.kind() {
+        cpal::ErrorKind::DeviceBusy => "output_device_busy",
+        cpal::ErrorKind::DeviceNotAvailable | cpal::ErrorKind::StreamInvalidated => {
+            "output_device_missing"
+        }
+        _ => "output_playback_failed",
+    }
+    .into()
+}
+#[cfg(all(test, target_os = "windows"))]
+mod tests {
+    #[test]
+    fn busy_and_invalidated_outputs_remain_categorical_without_os_messages() {
+        for (kind, expected) in [
+            (cpal::ErrorKind::DeviceBusy, "output_device_busy"),
+            (cpal::ErrorKind::StreamInvalidated, "output_device_missing"),
+            (cpal::ErrorKind::BackendError, "output_playback_failed"),
+        ] {
+            assert_eq!(
+                super::playback_error(cpal::Error::with_message(kind, "private native detail")),
+                expected
+            );
+        }
+    }
 }
 #[cfg(not(target_os = "windows"))]
-pub fn play(_: Vec<u8>, _: &str, _: Arc<AtomicBool>) -> Result<(), String> {
+pub fn play(_: Vec<u8>, _: &str, _: Arc<AtomicBool>, _: bool, _: f32) -> Result<(), String> {
     Err("output_platform_unsupported".into())
 }

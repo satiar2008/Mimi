@@ -1189,6 +1189,50 @@ impl SettingsStore {
         prefs
     }
 
+    pub fn reader_key(
+        &self,
+        speech: &crate::core::translation_output::SpeechSettings,
+    ) -> Result<Option<String>, String> {
+        use crate::core::translation_output::{speech_endpoint, SpeechProvider};
+        if speech.speech_provider != SpeechProvider::OpenAICompatible {
+            return self.speech_output_key(&speech.speech_provider);
+        }
+        let endpoint = speech_endpoint(&speech.endpoint)?;
+        let account = format!(
+            "speech-output:OpenAICompatible:{}:api-key",
+            endpoint.as_str()
+        );
+        if let Some(key) = self
+            .load_secret(self.profile_keychain_service, &account)
+            .map_err(SecretStoreError::public_error)?
+        {
+            return Ok(Some(key));
+        }
+        // Legacy key belongs only to its originally configured destination.
+        if speech.endpoint == self.preferences().translation_output.endpoint {
+            self.speech_output_key(&speech.speech_provider)
+        } else {
+            Ok(None)
+        }
+    }
+    pub fn save_reader_key(
+        &self,
+        speech: &crate::core::translation_output::SpeechSettings,
+        key: &str,
+    ) -> Result<(), String> {
+        use crate::core::translation_output::{speech_endpoint, SpeechProvider};
+        if speech.speech_provider != SpeechProvider::OpenAICompatible {
+            return self.save_speech_output_key(&speech.speech_provider, key);
+        }
+        let endpoint = speech_endpoint(&speech.endpoint)?;
+        let account = format!(
+            "speech-output:OpenAICompatible:{}:api-key",
+            endpoint.as_str()
+        );
+        self.save_secret(self.profile_keychain_service, &account, key, true)
+            .map_err(SecretStoreError::public_error)
+    }
+
     /// Applies and durably persists a preference update as one in-process
     /// transaction. A failed write leaves the published in-memory snapshot
     /// unchanged, so callers never report settings that will vanish on restart.
@@ -4405,6 +4449,33 @@ mod read_only_manual_probe_tests {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn reader_keys_do_not_cross_compatible_service_endpoints() {
+        use crate::core::translation_output::{SpeechProvider, SpeechSettings};
+        let store = SettingsStore::in_memory(Box::new(FakeSecretStore::default()), false);
+        let first = SpeechSettings {
+            speech_provider: SpeechProvider::OpenAICompatible,
+            endpoint: "https://first.example/v1/audio/speech".into(),
+            ..Default::default()
+        };
+        let mut second = first.clone();
+        second.endpoint = "https://second.example/v1/audio/speech".into();
+        store.save_reader_key(&first, "synthetic-first").unwrap();
+        assert_eq!(
+            store.reader_key(&first).unwrap().as_deref(),
+            Some("synthetic-first")
+        );
+        assert!(store.reader_key(&second).unwrap().is_none());
+        store.save_reader_key(&second, "synthetic-second").unwrap();
+        assert_eq!(
+            store.reader_key(&first).unwrap().as_deref(),
+            Some("synthetic-first")
+        );
+        assert_eq!(
+            store.reader_key(&second).unwrap().as_deref(),
+            Some("synthetic-second")
+        );
+    }
     #[test]
     fn speech_output_keys_are_separate_from_preferences_and_other_providers() {
         let fake = FakeSecretStore::default();

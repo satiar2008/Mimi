@@ -150,6 +150,12 @@ use tokio::sync::mpsc;
 
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum SystemAudioCaptureError {
+    #[cfg(target_os = "windows")]
+    #[error("برای خواندن زیرنویس، دریافت صدا را روی حالت خودکار یا یک برنامهٔ مشخص قرار دهید.")]
+    ReaderRequiresAutomaticSource,
+    #[cfg(target_os = "windows")]
+    #[error("میکروفون پیش‌فرض ویندوز خروجی ترجمه است؛ برای دریافت گفتار خودتان، میکروفون فیزیکی را در ویندوز پیش‌فرض کنید.")]
+    MicrophoneTranslationFeedback,
     #[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
     #[error("application_audio_unavailable")]
     ApplicationUnavailable,
@@ -370,6 +376,12 @@ pub struct AudioCapture {
     microphone: microphone::MicrophoneCapture,
     #[cfg(target_os = "windows")]
     application: windows_application::WindowsApplicationCapture,
+    #[cfg(target_os = "windows")]
+    speech_output: Arc<AtomicBool>,
+    #[cfg(target_os = "windows")]
+    explicit_source: Arc<AtomicBool>,
+    #[cfg(target_os = "windows")]
+    prevent_microphone_loop: Arc<AtomicBool>,
     state: Arc<std::sync::Mutex<SelectionState>>,
 }
 
@@ -407,6 +419,12 @@ impl AudioCapture {
             microphone: microphone::MicrophoneCapture::default(),
             #[cfg(target_os = "windows")]
             application: Default::default(),
+            #[cfg(target_os = "windows")]
+            speech_output: Default::default(),
+            #[cfg(target_os = "windows")]
+            explicit_source: Default::default(),
+            #[cfg(target_os = "windows")]
+            prevent_microphone_loop: Default::default(),
             state: Arc::new(std::sync::Mutex::new(SelectionState::default())),
         }
     }
@@ -464,6 +482,13 @@ impl AudioCapture {
                     self.application
                         .start(id.to_string(), ingress, failure, format)
                         .await?;
+                } else if self.speech_output.load(Ordering::SeqCst) {
+                    if self.explicit_source.load(Ordering::SeqCst) {
+                        return Err(SystemAudioCaptureError::ReaderRequiresAutomaticSource);
+                    }
+                    self.application
+                        .start_excluding_mimi(ingress, failure, format)
+                        .await?;
                 } else {
                     self.system.start(ingress, failure, format).await?;
                 }
@@ -489,6 +514,10 @@ impl AudioCapture {
                 }
             }
             crate::core::audio_input::AudioSource::Microphone => {
+                #[cfg(target_os = "windows")]
+                if self.prevent_microphone_loop.load(Ordering::SeqCst) {
+                    return Err(SystemAudioCaptureError::MicrophoneTranslationFeedback);
+                }
                 #[cfg(any(target_os = "macos", target_os = "windows"))]
                 self.microphone.start(ingress, failure, format).await?;
                 #[cfg(target_os = "linux")]
@@ -596,7 +625,18 @@ impl AudioCapture {
 
     #[cfg(target_os = "windows")]
     pub fn set_source(&self, source: String) {
+        self.explicit_source.store(
+            !source.is_empty() && source != windows::FOLLOW_AUDIBLE,
+            Ordering::SeqCst,
+        );
         self.system.set_source(source);
+    }
+
+    #[cfg(target_os = "windows")]
+    pub fn set_speech_output(&self, enabled: bool, prevent_microphone_loop: bool) {
+        self.speech_output.store(enabled, Ordering::SeqCst);
+        self.prevent_microphone_loop
+            .store(prevent_microphone_loop, Ordering::SeqCst);
     }
 
     #[cfg(target_os = "windows")]

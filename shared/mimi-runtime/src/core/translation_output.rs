@@ -15,6 +15,27 @@ pub enum SpeechProvider {
     #[default]
     ElevenLabs,
     OpenAICompatible,
+    MainService,
+    /// Resolved natively from MainService; not offered as an independent key slot.
+    Gemini,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase", deny_unknown_fields)]
+pub struct SpeechSettings {
+    pub speech_provider: SpeechProvider,
+    pub endpoint: String,
+    pub model: String,
+    pub voice: String,
+    pub speed: f64,
+    pub stability: f64,
+    pub similarity: f64,
+    pub device: String,
+}
+impl Default for SpeechSettings {
+    fn default() -> Self {
+        TranslationOutput::default().microphone_speech()
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -34,6 +55,11 @@ pub struct TranslationOutput {
     pub similarity: f64,
     /// Native output device ID. Empty is deliberately unconfigured.
     pub device: String,
+    /// None migrates legacy shared speech configuration without enabling a lane.
+    pub system_speech: Option<SpeechSettings>,
+    pub duck_system_audio: bool,
+    /// Relative volume of other applications during incoming subtitle playback.
+    pub original_volume: f64,
 }
 impl Default for TranslationOutput {
     fn default() -> Self {
@@ -51,20 +77,48 @@ impl Default for TranslationOutput {
             stability: 0.5,
             similarity: 0.75,
             device: String::new(),
+            system_speech: None,
+            duck_system_audio: true,
+            original_volume: 0.2,
         }
     }
 }
 impl TranslationOutput {
+    pub fn microphone_speech(&self) -> SpeechSettings {
+        SpeechSettings {
+            speech_provider: self.speech_provider.clone(),
+            endpoint: self.endpoint.clone(),
+            model: self.model.clone(),
+            voice: self.voice.clone(),
+            speed: self.speed,
+            stability: self.stability,
+            similarity: self.similarity,
+            device: self.device.clone(),
+        }
+    }
+    pub fn incoming_speech(&self) -> SpeechSettings {
+        self.system_speech
+            .clone()
+            .unwrap_or_else(|| self.microphone_speech())
+    }
     pub fn validate(&self) -> Result<(), String> {
-        if self.shortcut.len() > 80
-            || self.device.len() > 1024
+        if self.shortcut.len() > 80 || !(0.05..=1.0).contains(&self.original_volume) {
+            return Err("output_invalid_settings".into());
+        }
+        self.microphone_speech().validate(self.speak_microphone)?;
+        self.incoming_speech().validate(self.speak_system)
+    }
+}
+impl SpeechSettings {
+    pub fn validate(&self, enabled: bool) -> Result<(), String> {
+        if self.device.len() > 1024
             || !(0.7..=1.2).contains(&self.speed)
             || !(0.0..=1.0).contains(&self.stability)
             || !(0.0..=1.0).contains(&self.similarity)
         {
             return Err("output_invalid_settings".into());
         }
-        if self.speak_microphone || self.speak_system {
+        if enabled {
             if !valid_id(&self.model) || !valid_id(&self.voice) || self.device.is_empty() {
                 return Err("output_speech_configuration_required".into());
             }
@@ -148,6 +202,40 @@ pub fn speech_endpoint(value: &str) -> Result<url::Url, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn incoming_reader_needs_no_microphone_model_voice_or_output() {
+        let mut output = TranslationOutput {
+            speak_system: true,
+            system_speech: Some(SpeechSettings {
+                model: "eleven_v3".into(),
+                voice: "incoming-voice".into(),
+                device: "speakers".into(),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        assert!(output.validate().is_ok());
+        assert!(!output.speak_microphone);
+        assert!(output.model.is_empty() && output.device.is_empty());
+        output.model = "microphone-model".into();
+        output.device = "virtual-cable".into();
+        assert_eq!(output.incoming_speech().model, "eleven_v3");
+        assert_eq!(output.incoming_speech().device, "speakers");
+    }
+    #[test]
+    fn legacy_configuration_migrates_without_enabling_external_outputs() {
+        let output: TranslationOutput = serde_json::from_str(
+            r#"{"model":"legacy-model","voice":"old-voice","device":"old-output"}"#,
+        )
+        .unwrap();
+        assert_eq!(output.incoming_speech(), output.microphone_speech());
+        assert!(!output.speak_microphone && !output.speak_system);
+        let mut bad = output;
+        bad.original_volume = 0.0;
+        assert!(bad.validate().is_err());
+        bad.original_volume = f64::NAN;
+        assert!(bad.validate().is_err());
+    }
     fn snapshot(final_pair: bool) -> crate::core::models::SubtitleSnapshot {
         serde_json::from_value(serde_json::json!({
             "tracks": [{"audioSource":"microphone","source":{"text":"source","isFinal":true},

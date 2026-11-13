@@ -41,7 +41,7 @@ export function VoiceSettings({ onOpenModels, onOpenAppleResources }: { onOpenMo
       </SettingsRow>
     </SettingsSection>
     {settings.profiles.some(profile => profile.id === settings.activeProfileId) && <ProfileLanguageSettings settings={settings} disabled={locked} onOpenAppleResources={onOpenAppleResources} />}
-    <MicrophoneTranslationSettings />
     {settings.microphoneTextInsertionAvailable && <TranslationOutputSettings />}
+    <MicrophoneTranslationSettings />
   </div>;
 }

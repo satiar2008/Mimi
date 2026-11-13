@@ -1,8 +1,6 @@
 //! Bounded catalogs and PCM synthesis. No provider error bodies or credentials in errors.
 use super::provider_network::ProviderNetwork;
-use crate::core::translation_output::{
-    speech_endpoint, valid_id, SpeechProvider, TranslationOutput,
-};
+use crate::core::translation_output::{speech_endpoint, valid_id, SpeechProvider, SpeechSettings};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::time::Duration;
@@ -50,6 +48,19 @@ pub async fn gemini_models(
     key: &str,
     network: &ProviderNetwork,
 ) -> Result<Vec<CatalogItem>, String> {
+    gemini_catalog(key, network, false).await
+}
+pub async fn gemini_speech_models(
+    key: &str,
+    network: &ProviderNetwork,
+) -> Result<Vec<CatalogItem>, String> {
+    gemini_catalog(key, network, true).await
+}
+async fn gemini_catalog(
+    key: &str,
+    network: &ProviderNetwork,
+    speech: bool,
+) -> Result<Vec<CatalogItem>, String> {
     let mut endpoint =
         url::Url::parse("https://generativelanguage.googleapis.com/v1beta/models").unwrap();
     let http = client(network, &endpoint)?;
@@ -85,11 +96,16 @@ pub async fn gemini_models(
             let live = m["supportedGenerationMethods"]
                 .as_array()
                 .is_some_and(|methods| methods.iter().any(|v| v == "bidiGenerateContent"));
-            if live {
+            let tts = id.starts_with("gemini-")
+                && id.contains("tts")
+                && m["supportedGenerationMethods"]
+                    .as_array()
+                    .is_some_and(|methods| methods.iter().any(|v| v == "generateContent"));
+            if (speech && tts) || (!speech && live) {
                 result.push(CatalogItem {
                     id: id.into(),
                     name: id.into(),
-                    compatible: gemini_translation_model(id),
+                    compatible: speech || gemini_translation_model(id),
                 });
             }
         }
@@ -116,6 +132,16 @@ pub fn models_endpoint(endpoint: &str) -> Result<url::Url, String> {
         .ok_or("catalog_not_supported")?;
     url.set_path(&format!("{prefix}/models"));
     Ok(url)
+}
+pub fn compatible_speech_endpoint(endpoint: &str) -> Result<String, String> {
+    let mut url = models_endpoint(endpoint)?;
+    let prefix = url
+        .path()
+        .strip_suffix("/models")
+        .ok_or("catalog_not_supported")?
+        .to_owned();
+    url.set_path(&format!("{prefix}/audio/speech"));
+    Ok(url.into())
 }
 pub async fn compatible_models(
     endpoint: &str,
@@ -211,12 +237,12 @@ pub async fn eleven_catalog(
 }
 /// Returns mono 24kHz little-endian signed PCM16, bounded to 60 seconds.
 pub async fn synthesize(
-    settings: &TranslationOutput,
+    settings: &SpeechSettings,
     key: &str,
     text: &str,
     network: &ProviderNetwork,
 ) -> Result<Vec<u8>, String> {
-    settings.validate()?;
+    settings.validate(false)?;
     if !valid_id(&settings.model)
         || !valid_id(&settings.voice)
         || settings.voice.contains('/')
@@ -238,11 +264,22 @@ pub async fn synthesize(
             speech_endpoint(&settings.endpoint)?,
             json!({"input":text,"model":settings.model,"voice":settings.voice,"speed":settings.speed,"response_format":"pcm"}),
         ),
+        SpeechProvider::Gemini => (
+            url::Url::parse(&format!(
+                "https://generativelanguage.googleapis.com/v1beta/models/{}:generateContent",
+                settings.model
+            ))
+            .map_err(|_| "output_invalid_settings".to_string())?,
+            gemini_speech_payload(settings, text)?,
+        ),
+        SpeechProvider::MainService => return Err("output_main_service_unsupported".into()),
     };
     let http = client(network, &endpoint)?;
     let request = http.post(endpoint).json(&payload);
     let request = if settings.speech_provider == SpeechProvider::ElevenLabs {
         request.header("xi-api-key", key)
+    } else if settings.speech_provider == SpeechProvider::Gemini {
+        request.header("x-goog-api-key", key)
     } else if key.is_empty() {
         request
     } else {
@@ -252,6 +289,14 @@ pub async fn synthesize(
         .send()
         .await
         .map_err(|_| "catalog_network".to_string())?;
+    if settings.speech_provider == SpeechProvider::Gemini {
+        let value: Value = serde_json::from_slice(&body(response, 4 * 1024 * 1024).await?)
+            .map_err(|_| "output_invalid_audio".to_string())?;
+        return gemini_pcm(&value);
+    }
+    if !response.status().is_success() {
+        return Err(format!("catalog_http_{}", response.status().as_u16()));
+    }
     let content_type = response
         .headers()
         .get(reqwest::header::CONTENT_TYPE)
@@ -266,8 +311,104 @@ pub async fn synthesize(
     }
     Ok(pcm)
 }
+
+fn gemini_speech_payload(settings: &SpeechSettings, text: &str) -> Result<Value, String> {
+    // Model IDs are path components, never a provider-controlled URL.
+    if !settings.model.starts_with("gemini-")
+        || !settings.model.contains("tts")
+        || settings.model.contains('/')
+    {
+        return Err("output_invalid_settings".into());
+    }
+    let mut config = json!({"responseModalities":["AUDIO"],"speechConfig":{"voiceConfig":{"prebuiltVoiceConfig":{"voiceName":settings.voice}}}});
+    if settings.model.starts_with("gemini-3.8-") {
+        config["speechConfig"]["voiceConfig"] = json!({"voice":settings.voice});
+        config["responseFormat"] = json!({"audio":{"mimeType":"AUDIO_L16","sampleRate":24000}});
+    }
+    Ok(json!({"contents":[{"role":"user","parts":[{"text":text}]}],"generationConfig":config}))
+}
+fn gemini_pcm(value: &Value) -> Result<Vec<u8>, String> {
+    use base64::Engine as _;
+    let parts = value
+        .pointer("/candidates/0/content/parts")
+        .and_then(Value::as_array)
+        .ok_or("output_invalid_audio")?;
+    let mut pcm = Vec::new();
+    for part in parts.iter().take(32) {
+        let Some(audio) = part.get("inlineData") else {
+            continue;
+        };
+        let mime = audio["mimeType"]
+            .as_str()
+            .unwrap_or_default()
+            .to_ascii_lowercase();
+        // A different rate, codec or channel layout must never play as 24kHz PCM.
+        if !mime.starts_with("audio/l16") || !mime.split(';').any(|v| v.trim() == "rate=24000") {
+            return Err("output_invalid_audio".into());
+        }
+        let data = audio["data"].as_str().ok_or("output_invalid_audio")?;
+        if data.len() > 4_000_000 {
+            return Err("output_invalid_audio".into());
+        }
+        let chunk = base64::engine::general_purpose::STANDARD
+            .decode(data)
+            .map_err(|_| "output_invalid_audio")?;
+        if chunk.len() % 2 != 0 || pcm.len() + chunk.len() > 24_000 * 2 * 60 {
+            return Err("output_invalid_audio".into());
+        }
+        pcm.extend(chunk);
+    }
+    if pcm.is_empty() {
+        return Err("output_invalid_audio".into());
+    }
+    Ok(pcm)
+}
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn gemini_speech_keeps_the_selected_voice_and_verbatim_text() {
+        let mut settings = super::SpeechSettings {
+            speech_provider: super::SpeechProvider::Gemini,
+            model: "gemini-2.5-flash-preview-tts".into(),
+            voice: "Kore".into(),
+            ..Default::default()
+        };
+        let payload = super::gemini_speech_payload(&settings, "سلام Mimi 12").unwrap();
+        assert_eq!(payload["contents"][0]["parts"][0]["text"], "سلام Mimi 12");
+        assert_eq!(
+            payload["generationConfig"]["speechConfig"]["voiceConfig"]["prebuiltVoiceConfig"]
+                ["voiceName"],
+            "Kore"
+        );
+        settings.model = "gemini-3.8-flash-tts".into();
+        let payload = super::gemini_speech_payload(&settings, "Hello").unwrap();
+        assert_eq!(
+            payload["generationConfig"]["responseFormat"]["audio"]["mimeType"],
+            "AUDIO_L16"
+        );
+        assert_eq!(
+            payload["generationConfig"]["speechConfig"]["voiceConfig"]["voice"],
+            "Kore"
+        );
+        settings.model = "gemini-live-translate".into();
+        assert!(super::gemini_speech_payload(&settings, "Hello").is_err());
+    }
+    #[test]
+    fn gemini_audio_checks_format_rate_and_frame_boundaries() {
+        let audio = |mime: &str, data: &str| serde_json::json!({"candidates":[{"content":{"parts":[{"inlineData":{"mimeType":mime,"data":data}}]}}]});
+        assert_eq!(
+            super::gemini_pcm(&audio("audio/L16;codec=pcm;rate=24000", "AAABAA==")).unwrap(),
+            vec![0, 0, 1, 0]
+        );
+        for (mime, data) in [
+            ("audio/l16;rate=48000", "AAABAA=="),
+            ("audio/mpeg", "AAABAA=="),
+            ("audio/l16;rate=24000", "AA=="),
+            ("audio/l16;rate=24000", "invalid!"),
+        ] {
+            assert!(super::gemini_pcm(&audio(mime, data)).is_err());
+        }
+    }
     async fn fixture(response: Vec<u8>) -> (String, tokio::task::JoinHandle<String>) {
         use tokio::io::{AsyncReadExt, AsyncWriteExt};
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
@@ -327,7 +468,7 @@ mod tests {
         let payload = [0u8, 0, 1, 0, 2, 0, 0, 0];
         let response=format!("HTTP/1.1 200 OK\r\nContent-Length: {}\r\nContent-Type: audio/pcm\r\nConnection: close\r\n\r\n",payload.len()).into_bytes().into_iter().chain(payload).collect();
         let (endpoint, task) = fixture(response).await;
-        let settings = crate::core::translation_output::TranslationOutput {
+        let settings = crate::core::translation_output::SpeechSettings {
             speech_provider: crate::core::translation_output::SpeechProvider::OpenAICompatible,
             endpoint,
             model: "model-a".into(),

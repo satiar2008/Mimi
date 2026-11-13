@@ -3556,6 +3556,7 @@
 .output-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 16px; }
 .output-actions .settings-button { cursor: pointer; }
 .output-actions .settings-button:disabled { cursor: default; }
+.virtual-microphone-actions { margin-top: 0; }
 .output-model-name { overflow-wrap: anywhere; text-align: start; }
 .output-model-editor { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
 .output-model-editor .output-text-input { flex: 1 1 150px; }

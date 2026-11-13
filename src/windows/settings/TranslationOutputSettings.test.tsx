@@ -23,7 +23,8 @@ it("loads output choices without enabling microphone capture, speech or clipboar
   await render();
   expect(host.textContent).toContain("خروجی ترجمه");
   expect(host.querySelector<HTMLInputElement>('input[aria-label="میانبر سراسری ترجمهٔ میکروفون"]')!.value).toBe("F8");
-  expect([...host.querySelectorAll('[role="switch"]')].every(s => s.getAttribute("aria-checked") === "false")).toBe(true);
+  expect(host.querySelector('[aria-label="خواندن ترجمهٔ صدای دریافتی"]')!.getAttribute("aria-checked")).toBe("false");
+  expect(host.querySelector('[aria-label="کپی هر ترجمهٔ نهایی میکروفون"]')!.getAttribute("aria-checked")).toBe("false");
   expect(native.save).not.toHaveBeenCalled(); expect(native.catalog).not.toHaveBeenCalled(); expect(native.preview).not.toHaveBeenCalled();
   expect(useStore.getState().settings.audioInput).toBe(initial.settings.audioInput);
 });
@@ -32,8 +33,50 @@ it("persists automatic clipboard as an explicit choice, retaining other settings
   await act(() => host.querySelector<HTMLButtonElement>('[role="switch"][aria-label="کپی هر ترجمهٔ نهایی میکروفون"]')!.click());
   expect(native.save).not.toHaveBeenCalled();
   await act(() => button(outputCopy().save).click());
-  expect(native.save).toHaveBeenCalledWith({ ...settings, autoCopy: true }, undefined);
+  expect(native.save).toHaveBeenCalledWith({ ...settings, autoCopy: true }, undefined, false, true);
   expect(button(outputCopy().save).disabled).toBe(true);
+});
+it("changes the incoming voice without changing microphone configuration", async () => {
+  await render();
+  native.save.mockImplementation(async value => ({ settings: value, keyPresent: true, systemKeyPresent: true }));
+  const input = host.querySelector<HTMLInputElement>('input[aria-label="مدل خواننده"]')!;
+  await act(() => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, "incoming-model");
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await act(() => button(outputCopy().save).click());
+  const value = native.save.mock.calls[0][0];
+  expect(value.systemSpeech.model).toBe("incoming-model");
+  expect(value.model).toBe(settings.model);
+  expect(value.speakMicrophone).toBe(false);
+  expect(value.systemSpeech).not.toHaveProperty("shortcut");
+});
+it("enables incoming reading independently and previews only that path", async () => {
+  const ready = { ...settings, systemSpeech: { speechProvider: "elevenLabs", endpoint: settings.endpoint, model: "eleven_v3", voice: "voice-id", device: "speakers", speed: 1, stability: 0.5, similarity: 0.75 } };
+  native.get.mockResolvedValue({ settings: ready, keyPresent: false, systemKeyPresent: true });
+  native.save.mockImplementation(async value => ({ settings: value, keyPresent: false, systemKeyPresent: true }));
+  await render();
+  await act(() => host.querySelector<HTMLButtonElement>('[aria-label="خواندن ترجمهٔ صدای دریافتی"]')!.click());
+  await act(() => button(outputCopy().save).click());
+  expect(native.save.mock.calls[0][0].speakSystem).toBe(true);
+  expect(native.save.mock.calls[0][0].speakMicrophone).toBe(false);
+  await act(() => button(outputCopy().preview).click());
+  expect(native.preview).toHaveBeenCalledWith(true);
+});
+it("allows repairing an invalid model through its catalog without saving it first", async () => {
+  native.get.mockResolvedValue({ settings, keyPresent: true, systemKeyPresent: true });
+  native.catalog.mockResolvedValue([{ id: "eleven_v3", name: "Eleven v3", compatible: true }]);
+  await render();
+  const input = host.querySelector<HTMLInputElement>('input[aria-label="مدل خواننده"]')!;
+  await act(() => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, "Invalid display name");
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  expect(button(outputCopy().fetchModels).disabled).toBe(false);
+  expect(button(outputCopy().preview).disabled).toBe(true);
+  await act(() => button(outputCopy().fetchModels).click());
+  expect(native.catalog).toHaveBeenCalledWith(false, true);
+  expect(native.save).not.toHaveBeenCalled();
 });
 it("keeps a rejected shortcut draft available for correction", async () => {
   await render(); native.save.mockRejectedValue("output_shortcut_conflict");

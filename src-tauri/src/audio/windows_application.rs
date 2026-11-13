@@ -92,6 +92,25 @@ impl WindowsApplicationCapture {
         failure: CaptureFailureSender,
         format: AudioCaptureFormat,
     ) -> Result<(), SystemAudioCaptureError> {
+        self.start_inner(id, false, ingress, failure, format).await
+    }
+    pub async fn start_excluding_mimi(
+        &self,
+        ingress: AudioIngress,
+        failure: CaptureFailureSender,
+        format: AudioCaptureFormat,
+    ) -> Result<(), SystemAudioCaptureError> {
+        self.start_inner(String::new(), true, ingress, failure, format)
+            .await
+    }
+    async fn start_inner(
+        &self,
+        id: String,
+        exclude_self: bool,
+        ingress: AudioIngress,
+        failure: CaptureFailureSender,
+        format: AudioCaptureFormat,
+    ) -> Result<(), SystemAudioCaptureError> {
         if !supported() {
             return Err(SystemAudioCaptureError::ApplicationUnsupported);
         }
@@ -114,7 +133,7 @@ impl WindowsApplicationCapture {
             .name("mimi-application-audio".into())
             .spawn(move || {
                 let _finished = Finished(Arc::clone(&control));
-                let result = open(&id, &control, format);
+                let result = open(&id, exclude_self, &control, format);
                 let native = match result {
                     Ok(value) => value,
                     Err(error) => {
@@ -261,11 +280,16 @@ struct OpenCapture {
 }
 fn open(
     id: &str,
+    exclude_self: bool,
     worker: &Worker,
     format: AudioCaptureFormat,
 ) -> Result<OpenCapture, SystemAudioCaptureError> {
     AudioCaptureFormat::pcm16_mono(format.sample_rate_hz)?;
-    let process = Process::selected(id)?;
+    let process = if exclude_self {
+        Process::open(std::process::id()).map_err(|_| SystemAudioCaptureError::NativeStartFailed)?
+    } else {
+        Process::selected(id)?
+    };
     unsafe { CoInitializeEx(None, COINIT_MULTITHREADED) }
         .ok()
         .map_err(|_| SystemAudioCaptureError::NativeStartFailed)?;
@@ -275,7 +299,11 @@ fn open(
         Anonymous: AUDIOCLIENT_ACTIVATION_PARAMS_0 {
             ProcessLoopbackParams: AUDIOCLIENT_PROCESS_LOOPBACK_PARAMS {
                 TargetProcessId: process.pid,
-                ProcessLoopbackMode: PROCESS_LOOPBACK_MODE_INCLUDE_TARGET_PROCESS_TREE,
+                ProcessLoopbackMode: if exclude_self {
+                    PROCESS_LOOPBACK_MODE_EXCLUDE_TARGET_PROCESS_TREE
+                } else {
+                    PROCESS_LOOPBACK_MODE_INCLUDE_TARGET_PROCESS_TREE
+                },
             },
         },
     };
@@ -414,6 +442,112 @@ unsafe fn copy_packet(data: *const u8, frames: u32, flags: u32) -> Option<Vec<u8
 
 #[cfg(test)]
 mod tests {
+    #[tokio::test]
+    #[ignore = "requires Windows process loopback and an external 440Hz synthetic audio fixture"]
+    async fn native_reader_excludes_self_but_keeps_external_audio() {
+        use crate::audio::send_pipeline::AudioSendPipeline;
+        use cpal::traits::{DeviceTrait, HostTrait};
+        assert!(supported());
+        let device = cpal::default_host()
+            .default_output_device()
+            .expect("default output")
+            .id()
+            .unwrap()
+            .to_string();
+        let samples = Arc::new(Mutex::new(Vec::<u8>::new()));
+        let collected = samples.clone();
+        let pipeline = AudioSendPipeline::spawn(
+            move |pcm| {
+                let mut bytes = collected.lock().unwrap();
+                if bytes.len() + pcm.len() < 24_000 * 2 * 6 {
+                    bytes.extend(pcm);
+                }
+                async { Ok::<(), ()>(()) }
+            },
+            |_| {},
+        );
+        let (failure, mut errors) = CaptureFailureSender::channel();
+        let capture = WindowsApplicationCapture::default();
+        capture
+            .start_excluding_mimi(
+                pipeline.ingress().unwrap(),
+                failure,
+                AudioCaptureFormat::pcm16_mono(24_000).unwrap(),
+            )
+            .await
+            .unwrap();
+        // Explicit PCM16 frames; the external fixture supplies a different frequency.
+        let tone: Vec<u8> = (0..48_000)
+            .flat_map(|n| {
+                (((std::f64::consts::TAU * 8973.0 * n as f64 / 24_000.0).sin() * 2500.0).round()
+                    as i16)
+                    .to_le_bytes()
+            })
+            .collect();
+        let render = tokio::task::spawn_blocking(move || {
+            crate::speech_playback::play(
+                tone,
+                &device,
+                Arc::new(AtomicBool::new(false)),
+                false,
+                1.0,
+            )
+        });
+        tokio::time::sleep(Duration::from_millis(300)).await;
+        let rendered = render.await.unwrap();
+        capture.stop().await;
+        pipeline.stop();
+        rendered.unwrap();
+        assert!(errors.try_recv().is_err());
+        let bytes = samples.lock().unwrap();
+        let pcm: Vec<f64> = bytes
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|b| f64::from(i16::from_le_bytes([b[0], b[1]])) / 32768.0)
+            .collect();
+        let energy = |frequency: f64| {
+            let mut windows: Vec<f64> = pcm
+                .as_chunks::<2400>()
+                .0
+                .iter()
+                .map(|window| {
+                    let (mut a, mut b) = (0.0, 0.0);
+                    for (i, sample) in window.iter().enumerate() {
+                        let phase = std::f64::consts::TAU * frequency * i as f64 / 24_000.0;
+                        a += sample * phase.sin();
+                        b += sample * phase.cos();
+                    }
+                    (a * a + b * b).sqrt() / window.len() as f64
+                })
+                .collect();
+            assert!(
+                windows.len() >= 15,
+                "native probe needs at least 1.5 seconds of observed PCM"
+            );
+            windows.sort_by(f64::total_cmp);
+            // The marker spans the full two-second render. A persistent own
+            // stream must appear in most windows; one transient from unrelated
+            // audio is not evidence that the marker escaped exclusion.
+            (windows[windows.len() / 2], *windows.last().unwrap())
+        };
+        let (external, external_peak) = energy(440.0);
+        // Keep the own-playback marker outside ordinary speech's strong bands;
+        // unrelated live audio must not masquerade as the test's 1kHz marker.
+        let (own, own_peak) = energy(8973.0);
+        println!("Native reader probe: frames={}, external_median={external:.8}, own_median={own:.8}, external_peak={external_peak:.8}, own_peak={own_peak:.8}", pcm.len());
+        assert!(
+            external > 0.0001,
+            "external synthetic audio was not captured"
+        );
+        assert!(
+            own < external * 0.05,
+            "Mimi synthesized playback leaked into process loopback"
+        );
+        println!(
+            "Native process loopback retained external tone and excluded own synthesized output."
+        );
+    }
     use super::*;
 
     fn borrowed_activation_scope(

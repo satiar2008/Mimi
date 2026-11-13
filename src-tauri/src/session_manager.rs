@@ -1517,6 +1517,18 @@ impl SessionManager {
                         observation,
                     };
                 }
+                #[cfg(target_os = "windows")]
+                if preferences.translation_output.speak_system
+                    || preferences.translation_output.speak_microphone
+                {
+                    return crate::audio::CaptureDetails {
+                        kind: "application",
+                        strategy: "system_excluding_mimi",
+                        actual_device_name: None,
+                        system_output_device_name: None,
+                        observation,
+                    };
+                }
             }
             self.capture_details(source, observation, &preferences.windows_audio_source)
         })
@@ -2354,7 +2366,19 @@ impl SessionManager {
                 .map_err(|_| "Audio capture is already assigned to a session.".to_string())?;
             let capture = self.lane(source).audio.lock().unwrap().clone();
             #[cfg(target_os = "windows")]
-            capture.set_source(self.settings.preferences().windows_audio_source);
+            {
+                let prefs = self.settings.preferences();
+                capture.set_source(prefs.windows_audio_source);
+                capture.set_speech_output(
+                    prefs.translation_output.speak_system
+                        || prefs.translation_output.speak_microphone,
+                    source == AudioSource::Microphone
+                        && prefs.translation_output.speak_microphone
+                        && crate::virtual_microphone::translation_output_is_default_input(
+                            &prefs.translation_output.device,
+                        ),
+                );
+            }
             match self
                 .run_while_generation_current(
                     generation,
