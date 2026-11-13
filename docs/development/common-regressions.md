@@ -3,6 +3,17 @@
 Read this before launching, packaging, installing, or debugging macOS system
 prompts. The visible app name and version are not enough to establish identity.
 
+## مالکیت صوت خواننده در ویندوز
+
+CPAL ممکن است نخ فراخوان را در STA مقداردهی کند؛ عملیات نشست‌های حجم صدا
+به مالکیت COM سازگار نیاز دارند. ساخت و نابودی پخش خواننده و نگهبان کاهش
+حجم را روی نخ MTA اختصاصی انجام دهید. فقط دریافت موفق صوت از API برای
+پذیرش خواننده کافی نیست؛ پخش بومی، بازگردانی حجم و جداسازی صدای خود برنامه
+را نیز بسنجید. آزمون `native_reader_playback_does_not_inherit_a_cpal_sta`
+این بازگشت خطا را پوشش می‌دهد. نصب VB-CABLE نسخهٔ ۴۶ خروجی اضافی ۱۶ کاناله
+هم دارد؛ راه‌اندازی ساده باید زوج استاندارد CABLE Input / CABLE Output را
+انتخاب کند و هرگز میکروفون فیزیکی را برای آزمون کابل باز نکند.
+
 ## macOS app identities
 
 | Use | Canonical app | Bundle identifier | Signing identity |
