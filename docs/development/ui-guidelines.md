@@ -512,3 +512,11 @@ main activity. Initialize background/opacity before adding the native window
 using the same paint path as preference updates; a font-only change must not
 apply a previously hidden background default. Native checks use nondefault
 saved paint values and compare compositor pixels across font and opacity edits.
+## هویت ترجمه در خروجی میکروفون
+
+مصرف ترجمه برای درج و خواندن به نشست منطقی کاربر تعلق دارد. شمارهٔ اتصال
+شبکه در مکث، ادامه و بازیابی می‌تواند عوض شود؛ تغییر این شماره نباید همان
+ترجمه را دوباره قابل درج یا خواندن کند. ترجمهٔ نمایان باقی‌مانده از نشست
+قبلی نیز خروجی نشست تازه نیست. آزمون رگرسیون باید درج موفق، میانبر تکراری،
+مکث/ادامه و شروع نشست تازه بدون گفتار جدید را جدا بررسی کند. گزارش اتصال
+موفق یا یک متن نمایان به‌تنهایی این شروط را ثابت نمی‌کند.

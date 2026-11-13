@@ -341,3 +341,16 @@ placement class and runs the same cases used by Android JUnit without a SDK.
 This checks state/geometry, not WindowManager pixels, insets delivery or touch
 dispatch. The native `overlay_interaction` fixture covers Home/panel entry,
 restoration, repeated toggles and font/content changes when run on a device.
+## خروجی ترجمه و انتخاب مدل در فورک فارسی
+
+در شاخهٔ فارسی، سیاست انتخاب ترجمهٔ نهایی و جلوگیری از بازپخش، فهرست مدل‌های
+API و سرویس خواندن متن در `shared/mimi-runtime` قرار دارند. تغییر مدل Gemini
+در پیکربندی مشترک، کارخانهٔ سرویس و پیام راه‌اندازی مشترک اعمال می‌شود.
+نبودن کلید تشخیص گفتار مانع خواندن فهرست مدلِ مترجم متن مستقل نمی‌شود.
+
+میانبر سراسری، کلیپ‌بورد، درج Unicode، دستگاه خروجی و پخش PCM آداپتور ویندوز
+هستند. رابط اندروید برای تنظیم خروجی، انتخاب خواننده و کابل مجازی در این
+مرحله اضافه نشده است؛ ساخت و آزمون JNI به معنی فعال‌شدن این رابط نیست.
+آزمون زندهٔ میکروفون با Gemini روی ویندوز و بررسی خواننده با پاسخ مصنوعی
+جدا گزارش می‌شوند. آزمایش واقعی خواننده و خروجی تماس به درخواست کاربر تا
+تنظیم کلید خواننده و نصب کابل صوتی مجازی به تعویق افتاده است.
