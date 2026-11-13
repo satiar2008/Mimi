@@ -21,6 +21,13 @@ pub fn cancel() {
 }
 
 pub async fn insert(session: Arc<SessionManager>) -> Result<(), String> {
+    insert_after(session, std::time::Duration::from_secs(3)).await
+}
+
+pub async fn insert_after(
+    session: Arc<SessionManager>,
+    delay: std::time::Duration,
+) -> Result<(), String> {
     if !cfg!(target_os = "windows") {
         return Err("microphone_input_unsupported".into());
     }
@@ -38,7 +45,7 @@ pub async fn insert(session: Arc<SessionManager>) -> Result<(), String> {
     if *CONSUMED.lock().unwrap() == Some(key) {
         return Err("microphone_input_duplicate".into());
     }
-    tokio::time::sleep(std::time::Duration::from_secs(3)).await;
+    tokio::time::sleep(delay).await;
     tokio::task::spawn_blocking(move || {
         let _pending = pending;
         let check = || -> Result<(), String> {

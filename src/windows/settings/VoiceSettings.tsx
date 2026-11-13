@@ -5,6 +5,7 @@ import { profileErrorMessage } from "../../lib/connectionDiagnostics";
 import { profileSelectionState } from "../../lib/profileSelection";
 import { useStore } from "../../lib/store";
 import { AudioInputSettings } from "./AudioInputSettings";
+import { TranslationOutputSettings } from "./TranslationOutputSettings";
 import { MicrophoneTranslationSettings } from "./MicrophoneTranslationSettings";
 import { ProfileLanguageSettings } from "./ProfileLanguageSettings";
 import { SettingsRow, SettingsSection, SettingsSelect } from "./SettingsPrimitives";
@@ -41,5 +42,6 @@ export function VoiceSettings({ onOpenModels, onOpenAppleResources }: { onOpenMo
     </SettingsSection>
     {settings.profiles.some(profile => profile.id === settings.activeProfileId) && <ProfileLanguageSettings settings={settings} disabled={locked} onOpenAppleResources={onOpenAppleResources} />}
     <MicrophoneTranslationSettings />
+    {settings.microphoneTextInsertionAvailable && <TranslationOutputSettings />}
   </div>;
 }

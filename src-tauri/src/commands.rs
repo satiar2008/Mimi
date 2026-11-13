@@ -2575,7 +2575,7 @@ fn ensure_profile_mutation_allowed(is_active: bool) -> Result<(), String> {
     }
 }
 
-fn emit_settings_snapshot(
+pub(crate) fn emit_settings_snapshot(
     app: &AppHandle,
     settings: &SettingsStore,
 ) -> Result<SettingsSnapshotPayload, String> {

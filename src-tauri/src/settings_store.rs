@@ -278,6 +278,8 @@ pub struct OverlayFrame {
 #[serde(default)]
 pub struct Preferences {
     pub microphone_translation: crate::core::microphone_translation::MicrophoneTranslation,
+    pub translation_output: crate::core::translation_output::TranslationOutput,
+    pub speech_models: HashMap<String, String>,
     pub source_language: SourceLanguage,
     pub target_language: TargetLanguage,
     pub translation_mode: TranslationMode,
@@ -325,6 +327,8 @@ impl Default for Preferences {
     fn default() -> Self {
         Self {
             microphone_translation: Default::default(),
+            translation_output: Default::default(),
+            speech_models: HashMap::new(),
             source_language: SourceLanguage::Automatic,
             target_language: TargetLanguage::SimplifiedChinese,
             translation_mode: TranslationMode::Turbo,
@@ -1153,6 +1157,28 @@ impl SettingsStore {
 
     pub fn is_ui_test(&self) -> bool {
         self.is_ui_test
+    }
+
+    pub fn speech_output_key(
+        &self,
+        provider: &crate::core::translation_output::SpeechProvider,
+    ) -> Result<Option<String>, String> {
+        let account = format!("speech-output:{provider:?}:api-key");
+        self.load_secret(self.profile_keychain_service, &account)
+            .map_err(SecretStoreError::public_error)
+    }
+    pub fn save_speech_output_key(
+        &self,
+        provider: &crate::core::translation_output::SpeechProvider,
+        key: &str,
+    ) -> Result<(), String> {
+        let account = format!("speech-output:{provider:?}:api-key");
+        if key.is_empty() {
+            self.delete_secret(self.profile_keychain_service, &account)
+        } else {
+            self.save_secret(self.profile_keychain_service, &account, key, true)
+        }
+        .map_err(SecretStoreError::public_error)
     }
 
     pub fn preferences(&self) -> Preferences {
@@ -3233,6 +3259,11 @@ impl SettingsStore {
         .with_alibaba_realtime(profile.alibaba_realtime_mode, &profile.alibaba_workspace_id)
         .with_xai_speech(profile.xai_speech_mode, &profile.xai_text_model)
         .with_speech_translation_mode(profile.speech_translation_mode)
+        .with_speech_model(if profile.uses_independent_asr() {
+            None
+        } else {
+            self.preferences().speech_models.get(&profile.id).cloned()
+        })
         .with_network_proxy(
             profile
                 .speech_network_proxy
@@ -3467,6 +3498,11 @@ impl SettingsStore {
         .with_alibaba_realtime(profile.alibaba_realtime_mode, &profile.alibaba_workspace_id)
         .with_xai_speech(profile.xai_speech_mode, &profile.xai_text_model)
         .with_speech_translation_mode(profile.speech_translation_mode)
+        .with_speech_model(if profile.uses_independent_asr() {
+            None
+        } else {
+            self.preferences().speech_models.get(&profile.id).cloned()
+        })
         .with_network_proxy(
             profile
                 .speech_network_proxy
@@ -3667,6 +3703,11 @@ impl SettingsStore {
         .with_alibaba_realtime(profile.alibaba_realtime_mode, &profile.alibaba_workspace_id)
         .with_xai_speech(profile.xai_speech_mode, &profile.xai_text_model)
         .with_speech_translation_mode(profile.speech_translation_mode)
+        .with_speech_model(if profile.uses_independent_asr() {
+            None
+        } else {
+            self.preferences().speech_models.get(&profile.id).cloned()
+        })
         .with_stage_network_proxies(
             profile
                 .speech_network_proxy
@@ -4364,6 +4405,36 @@ mod read_only_manual_probe_tests {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn speech_output_keys_are_separate_from_preferences_and_other_providers() {
+        let fake = FakeSecretStore::default();
+        let store = SettingsStore::in_memory(Box::new(fake), false);
+        use crate::core::translation_output::SpeechProvider;
+        store
+            .save_speech_output_key(&SpeechProvider::ElevenLabs, "synthetic-eleven-key")
+            .unwrap();
+        assert_eq!(
+            store
+                .speech_output_key(&SpeechProvider::ElevenLabs)
+                .unwrap()
+                .as_deref(),
+            Some("synthetic-eleven-key")
+        );
+        assert!(store
+            .speech_output_key(&SpeechProvider::OpenAICompatible)
+            .unwrap()
+            .is_none());
+        assert!(!serde_json::to_string(&store.preferences())
+            .unwrap()
+            .contains("synthetic-eleven-key"));
+        store
+            .save_speech_output_key(&SpeechProvider::ElevenLabs, "")
+            .unwrap();
+        assert!(store
+            .speech_output_key(&SpeechProvider::ElevenLabs)
+            .unwrap()
+            .is_none());
+    }
     fn save_realtime_speech_mode(
         store: &SettingsStore,
         id: &str,

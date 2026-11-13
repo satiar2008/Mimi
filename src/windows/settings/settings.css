@@ -3539,3 +3539,23 @@
 [dir="rtl"] .software-update__release[open] > summary [data-directional-icon] {
   scale: 1;
 }
+.output-text-input,
+.output-number-input {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  border: 1px solid var(--settings-border-strong);
+  border-radius: 6px;
+  padding: 7px 10px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  box-sizing: border-box;
+}
+.output-number-input { width: 88px; }
+.output-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+.output-actions .settings-button { cursor: pointer; }
+.output-actions .settings-button:disabled { cursor: default; }
+.output-model-name { overflow-wrap: anywhere; text-align: start; }
+.output-model-editor { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
+.output-model-editor .output-text-input { flex: 1 1 150px; }

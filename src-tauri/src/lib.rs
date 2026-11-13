@@ -36,12 +36,15 @@ mod mac_dock;
 #[cfg(target_os = "macos")]
 mod mac_native_quit;
 mod microphone_input;
+mod provider_models;
 #[cfg(all(test, feature = "development-debugger", target_os = "macos"))]
 mod provider_public_audio_probe;
 mod session_export;
 mod session_history;
 mod session_manager;
 mod settings_store;
+mod speech_playback;
+mod translation_output;
 mod updater_target;
 mod windows;
 #[cfg(target_os = "windows")]
@@ -222,6 +225,7 @@ pub fn run() {
             #[cfg(target_os = "macos")]
             mac_native_quit::install(&app_handle)?;
             setup_global_shortcuts(&app_handle, Arc::clone(&session))?;
+            translation_output::start(&app_handle, Arc::clone(&session), Arc::clone(&settings));
             #[cfg(target_os = "linux")]
             {
                 let args = std::env::args().collect::<Vec<_>>();
@@ -451,6 +455,15 @@ pub fn run() {
             commands::open_service_setup_page,
             commands::settings_save,
             commands::microphone_insert_translation,
+            translation_output::translation_output_get,
+            translation_output::translation_output_save,
+            translation_output::microphone_copy_translation,
+            translation_output::speech_output_devices,
+            translation_output::speech_output_catalog,
+            translation_output::speech_output_preview,
+            translation_output::speech_output_cancel,
+            provider_models::provider_models_get,
+            provider_models::provider_model_save,
             commands::microphone_cancel_insertion,
             commands::profile_create,
             commands::profile_duplicate,

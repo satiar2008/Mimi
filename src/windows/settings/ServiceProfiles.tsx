@@ -62,6 +62,7 @@ import { TencentSetupHelp } from "./TencentSetupHelp";
 import { ServiceSetupLink } from "./ServiceSetupLink";
 import { profileCopyName } from "../../lib/profileCopyName";
 import { AlibabaRealtimeSettings } from "./AlibabaRealtimeSettings";
+import { ProviderModels } from "./ProviderModels";
 import { QwenMTModelSettings } from "./QwenMTModelSettings";
 import { XAISpeechSettings } from "./XAISpeechSettings";
 import { SpeechTranslationModeSettings } from "./SpeechTranslationModeSettings";
@@ -567,7 +568,10 @@ export function ServiceProfiles({
     }, CONNECTION_CHECK_TIMEOUT_MS);
     void (sourceLanguage ? testProfileConnection(profileId, stage, credentials, sourceLanguage) : credentials ? testProfileConnection(profileId, stage, credentials) : stage ? testProfileConnection(profileId, stage) : testProfileConnection(profileId))
       .then((result) => {
-        if (canPublish()) publish(result, null);
+        if (canPublish()) {
+          publish(result, null);
+          if (result.service === "available" && !credentials) window.dispatchEvent(new CustomEvent("mimi-model-refresh", { detail: { profileId, stage: key } }));
+        }
       })
       .catch((error: unknown) => {
         if (canPublish()) publish(null, credentialErrorMessage(error) ?? `${diagnosticCopy().unavailable}: ${diagnosticCopy().checkFailed}`);
@@ -713,6 +717,7 @@ export function ServiceProfiles({
                   }} />
 }
           </ServiceEditorModule>}
+          <ProviderModels key={`models-${selectedProfile.id}`} profile={selectedProfile} disabled={mutationsDisabled} />
           <div className="service-detail__connection service-editor-module service-editor-module--connection">
             <SelectedCredentialEditor
               support={apple.support} settings={settings} requiresStop={requiresStop} loading={apple.loading} failed={apple.failed} sourceLanguage={settings.sourceLanguage} targetLanguage={settings.targetLanguage}

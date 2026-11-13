@@ -1130,6 +1130,8 @@ pub struct SessionManager {
     health_latency: Arc<Mutex<Option<HealthCheckLatency>>>,
     settings: Arc<SettingsStore>,
     controller: Arc<Mutex<TranslationSessionController>>,
+    /// Logical user session boundary; pause/recovery keep it stable.
+    output_started_at_ms: Arc<AtomicU64>,
     /// Captured at manual start; pause, reconnect and recovery preserve it.
     active_audio_input: Arc<Mutex<AudioInput>>,
     recording: Arc<Mutex<[crate::core::session_archive::AudioRecording; 2]>>,
@@ -1217,6 +1219,7 @@ impl SessionManager {
             health_latency: Default::default(),
             settings,
             controller: Arc::new(Mutex::new(TranslationSessionController::default())),
+            output_started_at_ms: Arc::new(AtomicU64::new(0)),
             active_audio_input: Default::default(),
             recording: Default::default(),
             archive_revision: Default::default(),
@@ -1278,6 +1281,10 @@ impl SessionManager {
             || self.active_generation.load(Ordering::SeqCst) != NO_GENERATION
     }
 
+    pub fn output_generation(&self) -> u64 {
+        self.output_started_at_ms.load(Ordering::SeqCst)
+    }
+
     pub fn microphone_insertion_candidate(
         &self,
     ) -> Option<(
@@ -1286,7 +1293,7 @@ impl SessionManager {
     )> {
         let _transition = self.generation_transition.lock().unwrap();
         let controller = self.controller.lock().unwrap();
-        if !controller.state.status.is_active()
+        if controller.state.status != SessionStatus::Listening
             || !self.sources().contains(&AudioSource::Microphone)
         {
             return None;
@@ -1294,7 +1301,8 @@ impl SessionManager {
         mimi_runtime::core::microphone_input::MicrophoneInsertion::from_subtitles(
             &controller.state.subtitles,
         )
-        .map(|pair| (self.active_generation.load(Ordering::SeqCst), pair))
+        .filter(|pair| pair.created_at_ms >= self.output_generation())
+        .map(|pair| (self.output_generation(), pair))
     }
 
     /// Serializes a profile or listening-settings mutation with start/stop.
@@ -1944,6 +1952,8 @@ impl SessionManager {
         ) {
             return Ok(());
         }
+        self.output_started_at_ms
+            .store(started_at_ms, Ordering::SeqCst);
         self.stopping_tail_generation
             .store(NO_GENERATION, Ordering::SeqCst);
         self.is_paused.store(false, Ordering::SeqCst);
@@ -3586,6 +3596,7 @@ impl SessionManager {
     }
 
     pub async fn clear_subtitles(self: &Arc<Self>) -> std::io::Result<()> {
+        crate::translation_output::speech_output_cancel();
         let _content = self.subtitle_content_lock.lock().await;
         self.clear_current_subtitle_history()?;
         for source in [AudioSource::System, AudioSource::Microphone] {

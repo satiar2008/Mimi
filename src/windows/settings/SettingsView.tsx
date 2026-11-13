@@ -1,3 +1,4 @@
+import { useTranslationOutputFeedback } from "../../lib/useTranslationOutputFeedback";
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { SubtitleSessionControls } from "./SubtitleSessionControls";
 import { Icon } from "../../components/Icon";
@@ -55,6 +56,7 @@ const CATEGORY_SECTION_IDS: Record<SettingsCategory, string> = {
 
 /** Compact settings surface shared by the macOS and Windows shells. */
 export function SettingsView() {
+  useTranslationOutputFeedback();
   const { nativeShortcuts, commands: desktopShortcutCommands } = useDesktopShortcuts();
   const [showShortcutSetup, setShowShortcutSetup] = useState(false);
   const [subtitleFontPreview, setSubtitleFontPreview] = useState<string | undefined>();

@@ -1,3 +1,4 @@
+import { useTranslationOutputFeedback } from "../../lib/useTranslationOutputFeedback";
 import { isSystemAudioPermissionDenied } from "../../lib/systemAudioPermissions";
 import { useLanguageNormalizationToast } from "../settings/useLanguageNormalizationToast";
 import { memo, useCallback, useEffect, useRef, useSyncExternalStore, type RefObject } from "react";
@@ -36,6 +37,7 @@ export const OverlayControlWindow = memo(function OverlayControlWindow({ embedde
   subtitleRootRef?: RefObject<HTMLElement | null>;
 }) {
   useSyncExternalStore(subscribeUiLanguage, effectiveUiLanguage, effectiveUiLanguage);
+  useTranslationOutputFeedback();
   const surfaceRef = useRef<HTMLDivElement>(null);
   const sessionStatusKind = useStore(selectSessionStatusKind);
   const sessionErrorMessage = useStore(selectSessionErrorMessage);

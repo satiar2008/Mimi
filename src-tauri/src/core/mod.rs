@@ -31,6 +31,7 @@ pub mod session;
 pub mod session_archive;
 pub mod subtitle_font;
 pub mod subtitle_reducer;
+pub mod translation_output;
 
 #[cfg(any(target_os = "windows", test))]
 pub mod audio_source;
